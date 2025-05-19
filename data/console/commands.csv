@@ -1,0 +1,2 @@
+command,class,tags,syntax,help
+RunSEEDReport,org.tranquility.seedreporter.commands.RunSEEDReport,"campaign,cheat",runseedreport (no arguments),Runs the SEED report on the current save file. Also reloads the planet filter settings in modSettings.json.

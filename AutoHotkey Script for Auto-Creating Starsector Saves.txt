@@ -1,0 +1,37 @@
+; Warning: This AHK script is PROVIDED AS-IS! RUN OR MODIFY AT YOUR OWN RISK!
+; Requires the AutoHotkey program here: https://www.autohotkey.com/
+; Copy-and-paste this whole file into an .ahk file (or rename the extension to .ahk) to make this script runnable
+
+#Requires AutoHotkey v2.0
+#SingleInstance Force
+#MaxThreadsPerHotkey 2
+
+; Just to make sure the coordinates are relative to the Starsector window
+CoordMode "Mouse", "Client"
+
+; Press Spacebar to forcibly stop the script
+Space::ExitApp
+
+; Press the backtick button [`] to activate the loop
+; Button presses and delays assume the SEED Reporter mod is enabled
+; Coordinates assume Starsector is set at 1280x768 resolution and with fullscreen disabled
+; Modify the Sleep numbers based on your Starsector FPS and load times
+#HotIf WinActive("ahk_class LWJGL")
+`::{
+  Loop {
+    Sleep 700       ; Wait 0.7 seconds
+    Click 1040, 330 ; Click "New Game"
+    Sleep 150       ; Wait 0.15 seconds
+    Click 920, 200  ; Click "Generate"
+    Sleep 150       ; Wait 0.15 seconds
+    Send "1"        ; Press "Continue"
+    Sleep 150       ; Wait 0.15 seconds
+    Send "1"        ; Press option 1
+    Sleep 2000      ; Wait 2 seconds for new game to load
+    Send "{Escape}" ; Pause game
+    Sleep 150       ; Wait 0.15 seconds
+    Click 760, 500  ; Click "Exit"
+    Sleep 75        ; Wait 0.075 seconds
+    Send "{Enter}"  ; Confirm exit
+  }
+}

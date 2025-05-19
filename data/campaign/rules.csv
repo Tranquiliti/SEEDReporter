@@ -1,0 +1,13 @@
+id,trigger,conditions,script,text,options,notes
+initNewGameChoicesSEED,AddNewGameChoices,,,,-1:SEED_ngcQuickStart:A time traveler with a Wolf-class frigate and a Kite-class shuttle (instant start),
+SEED_ngcQuickStartOption,NewGameOptionSelected,$option == SEED_ngcQuickStart,"NGCAddShip wolf_Starting
+NGCAddShip kite_Starting
+AddTextSmall ""Acquired level 1 officer"" good
+SetTextHighlights ""level 1 officer""
+$ngcAddOfficer = true
+NGCSetDifficulty normal
+$ngcSkipTutorial = true
+NGCSetWithTimePass false
+NGCSetStartingLocation Duzahk -2650 3250
+NGCAddStandardStartingScript
+NGCDone",,,

@@ -1,0 +1,22 @@
+{
+  "id": "seedreporter",
+  "name": "SEED Reporter",
+  "author": "Tranquility",
+  "utility": true,
+  "version": {
+    "major": 0,
+    "minor": 1,
+    "patch": 0
+  },
+  "description": "Provides information for a sector seed upon creating a new game.\n\nAlso includes a new game option for faster seed finding.",
+  "gameVersion": "0.98a-RC8",
+  "jars": [
+    "jars/seedreporter.jar"
+  ],
+  "dependencies": [
+    {
+      "id": "lw_console"
+    }
+  ],
+  "modPlugin": "org.tranquility.seedreporter.SEEDModPlugin"
+}
