@@ -1,10 +1,6 @@
 id,trigger,conditions,script,text,options,notes
-initNewGameChoicesSEED,AddNewGameChoices,,,,-1:SEED_ngcQuickStart:A time traveler with a Wolf-class frigate and a Kite-class shuttle (instant start),
-SEED_ngcQuickStartOption,NewGameOptionSelected,$option == SEED_ngcQuickStart,"NGCAddShip wolf_Starting
-NGCAddShip kite_Starting
-AddTextSmall ""Acquired level 1 officer"" good
-SetTextHighlights ""level 1 officer""
-$ngcAddOfficer = true
+initNewGameChoicesSEED,AddNewGameChoices,,"SetTooltip SEED_ngcQuickStart ""A Scarab-class equipped with an obscure, Domain-era time-travel device, sent to survey the Persean Sector before its fateful day.\n\nIntended only to gather information for a SEED report - the sector is unlikely to survive this space-time intrusion unscathed.""",,"-1:SEED_ngcQuickStart:A time traveler, commanding a Scarab-class frigate (instant start)",
+SEED_ngcQuickStartOption,NewGameOptionSelected,$option == SEED_ngcQuickStart,"NGCAddShip scarab_Starting
 NGCSetDifficulty normal
 $ngcSkipTutorial = true
 NGCSetWithTimePass false
