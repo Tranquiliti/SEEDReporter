@@ -1,13 +1,13 @@
 {
-  "masterVersionFile": "https://raw.githubusercontent.com/Tranquiliti/SEEDReporter/main/seedreporter.version",
-  "modName": "seedreporter",
-  "modThreadId": 33116,
-  "modVersion": {
-    "major": 0,
-    "minor": 1,
-    "patch": 0
-  },
-  "starsectorVersion": "0.98a-RC8",
-  "directDownloadURL": "https://github.com/Tranquiliti/SEEDReporter/releases/download/v0.1.0/SEEDReporter-v0.1.0.zip",
-  "changelogURL": "https://raw.githubusercontent.com/Tranquiliti/SEEDReporter/main/changelog.txt"
+	"masterVersionFile": "https://raw.githubusercontent.com/Tranquiliti/SEEDReporter/main/seedreporter.version",
+	"modName": "SEED Reporter",
+	"modThreadId": 33116,
+	"modVersion": {
+		"major": 0,
+		"minor": 2,
+		"patch": 0
+	},
+	"starsectorVersion": "0.98a-RC8",
+	"directDownloadURL": "https://github.com/Tranquiliti/SEEDReporter/releases/download/v0.2.0/SEEDReporter-v0.2.0.zip",
+	"changelogURL": "https://raw.githubusercontent.com/Tranquiliti/SEEDReporter/main/changelog.txt"
 }

@@ -1,3 +1,17 @@
+Version 0.2.0
+
+* Moved all SEED report config settings to seedreporterSettings.json (previously modSettings.json)
+  - Renamed "planetsToSearch" to "planetFilters"
+* Added custom exceptional officer search settings to seedreporterSettings.json
+  - These allow searching for specific template combinations (e.g., 2 slow High Tech officers and 2 fast High Tech ones)
+  - The SEED report will now save the seed if any of the template combinations in "exceptionalOfficerSearch" are found
+  - By default, seeds with 4-of-a-kind exceptional officer combinations are saved to "seedreporter_savedSeeds.json"
+  - Seeds with no exceptional officer pods are no longer saved to the seed file
+* Modified the time-skip new game option to instead start with a Scarab and no additional officers
+* Normalized coordinates to the hyperspace grid size to simplify searching for systems in the hyperspace map
+
+
+
 Version 0.1.0
 
 * Initial release

@@ -19,6 +19,7 @@ import org.lwjgl.util.vector.Vector2f;
 import java.util.Random;
 
 import static com.fs.starfarer.api.impl.campaign.world.NamelessRock.NAMELESS_ROCK_LOCATION_ID;
+import static com.fs.starfarer.api.ui.MapParams.GRID_SIZE_MAP_UNITS;
 
 public final class SEEDUtils {
     public static final Vector2f CORE_WORLD_CENTER = new Vector2f(-4531, -5865);
@@ -132,6 +133,6 @@ public final class SEEDUtils {
 
     public static String getHyperspaceCoordinates(LocationAPI loc) {
         Vector2f vec = loc.getLocation();
-        return String.format("%.2f LY away (%.0f, %.0f)", Misc.getDistanceLY(CORE_WORLD_CENTER, vec), vec.getX(), vec.getY());
+        return String.format("%.2f LY away (%.2f, %.2f)", Misc.getDistanceLY(CORE_WORLD_CENTER, vec), vec.getX() / GRID_SIZE_MAP_UNITS, vec.getY() / GRID_SIZE_MAP_UNITS);
     }
 }
