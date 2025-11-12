@@ -1,3 +1,14 @@
+Version 0.3.0
+
+* Added "runSEEDReportOnGameStart" setting to seedreporterSettings.json
+  - Can be set to "false" to disable automatically running a report upon starting a new game
+* Added LunaLib setting support for "runSEEDReportOnGameStart"
+* Fixed exceptional officer search not correctly handling combinations containing at least two different templates
+* Renamed "distanceFromCore" to "distanceFromCOM"
+  - Now uses the market center of mass calculation (instead of a hard-coded value) to determine distance
+
+
+
 Version 0.2.0
 
 * Moved all SEED report config settings to seedreporterSettings.json (previously modSettings.json)

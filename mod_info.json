@@ -5,7 +5,7 @@
 	"utility": true,
 	"version": {
 		"major": 0,
-		"minor": 2,
+		"minor": 3,
 		"patch": 0
 	},
 	"description": "Provides information for a sector seed upon creating a new game.\n\nAlso includes a new game option for faster seed finding.",

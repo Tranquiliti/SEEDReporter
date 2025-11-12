@@ -1,4 +1,11 @@
+#-- Note for LunaLib users --#
+# LunaLib overrides the "runSeedReportOnGameStart" setting.
+# Use LunaLib's in-game UI configs to toggle it instead.
+
 {
+	# If true, a SEED Report will be executed upon starting a new game
+	"runSEEDReportOnGameStart": true,
+
 	# Settings for the planet filters.
 	# Star systems tagged as "theme_core", "theme_hidden", or "system_abyssal"
 	# will be skipped regardless of the filter settings.
@@ -10,8 +17,8 @@
 			# If true, the filter will be activated when running the report.
 			"isEnabled": false,
 
-			# If specified, only planets within the specified LY from the Core World center will show up
-			"distanceFromCore": 25,
+			# If specified, only planets within the specified LY from the market center of mass will show up
+			"distanceFromCOM": 25,
 
 			# If true, only planets in systems containing a Gate will show up.
 			"inGateSystem": false,
@@ -199,7 +206,7 @@
 		{
 			"filterName": "Barren in Gate system (20 LY)",
 			"isEnabled": true,
-			"distanceFromCore": 20,
+			"distanceFromCOM": 20,
 			"inGateSystem": true,
 			"maxHazardValue": 175, # Only 1 25% hazard rating condition
 			"matchesPlanetTypes": [
@@ -217,7 +224,7 @@
 		{
 			"filterName": "Gas Giant with Plentiful Volatiles in Gate system (20 LY)",
 			"isEnabled": true,
-			"distanceFromCore": 20,
+			"distanceFromCOM": 20,
 			"inGateSystem": true,
 			"maxHazardValue": 175, # Only one 25% hazard rating condition at most
 			"matchesPlanetTypes": [
