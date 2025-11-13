@@ -4,10 +4,10 @@
 	"modThreadId": 33116,
 	"modVersion": {
 		"major": 0,
-		"minor": 2,
+		"minor": 3,
 		"patch": 0
 	},
 	"starsectorVersion": "0.98a-RC8",
-	"directDownloadURL": "https://github.com/Tranquiliti/SEEDReporter/releases/download/v0.2.0/SEEDReporter-v0.2.0.zip",
+	"directDownloadURL": "https://github.com/Tranquiliti/SEEDReporter/releases/download/v0.3.0/SEEDReporter-v0.3.0.zip",
 	"changelogURL": "https://raw.githubusercontent.com/Tranquiliti/SEEDReporter/main/changelog.txt"
 }

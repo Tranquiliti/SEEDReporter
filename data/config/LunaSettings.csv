@@ -1,0 +1,3 @@
+fieldID,fieldName,fieldType,defaultValue,fieldDescription,minValue,maxValue,tab
+seedreporterHeader,SEED Reporter Header,Header,SEED Reporter,,,,
+runSEEDReportOnGameStart,Run SEED report on game start,Boolean,true,"If true, a SEED Report will be executed upon starting a new game",,,
