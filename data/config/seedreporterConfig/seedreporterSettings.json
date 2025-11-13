@@ -6,34 +6,143 @@
 	# If true, a SEED Report will be executed upon starting a new game
 	"runSEEDReportOnGameStart": true,
 
+	"starSystemFilters": {
+		"example": {
+			# Name of the filter, which will be displayed on the report.
+			"filterName": "Example filter",
+
+			# If specified, any seed that passes this filter will be saved to seedreporter_savedSeeds.json,
+			# using the given shorthand alongside the seed string information
+			"saveShorthand": "e.g.",
+
+			# If true, the filter will be activated when running the report
+			"isEnabled": false,
+
+			# If specified, search for a system with the given system ID
+			"systemId": "example",
+
+			# If specified, ignore systems that include any of these tags
+			"avoidTags": [
+				"theme_hidden"
+			],
+
+			# If specified, only search for systems that include all specified tags
+			"hasTags": [
+				"theme_core"
+			],
+
+			# If specified, Oonly search for systems that contain an entity with all specified tags
+			"hasEntityWithTags": [
+				"station"
+			]
+		},
+		"sentinel": {
+			"filterName": "Sentinel location",
+			"isEnabled": true,
+			"hasTags": [
+				"pk_system"
+			]
+		},
+		"namelessRock": {
+			"filterName": "Nameless Rock location",
+			"isEnabled": true,
+			"systemId": "nameless_rock_location"
+		},
+		"domainCryosleeper": {
+			"filterName": "Domain-era Cryosleeper locations",
+			"isEnabled": true,
+			"hasTags": [
+				"theme_derelict_cryosleeper"
+			],
+		},
+		"domainMothership": {
+			"filterName": "Domain-era Mothership locations",
+			"isEnabled": true,
+			"hasTags": [
+				"theme_derelict_mothership"
+			]
+		},
+		"remnantStation": {
+			"filterName": "Fully-operational Remnant station locations",
+			"isEnabled": true,
+			"hasTags": [
+				"theme_remnant_main",
+				"theme_remnant_resurgent"
+			]
+		},
+		"hypershunt": {
+			"filterName": "Coronal Hypershunt locations",
+			"isEnabled": true,
+			"hasTags": [
+				"has_coronal_tap"
+			]
+		},
+		"gate": {
+			"filterName": "Inactive Gate locations",
+			"isEnabled": true,
+			"avoidTags": [
+				"theme_hidden",
+				"theme_core",
+				"theme_abyssal"
+			],
+			"hasEntityWithTags": [
+				"gate"
+			],
+		},
+		"sotf_MiasStar": {
+			"filterName": "Mia's Star with Inactive Gate (from the Secrets of the Frontier mod)",
+			"saveShorthand": "*",
+			"isEnabled": false,
+			"systemId": "sotf_mia",
+			"hasEntityWithTags": [
+				"gate"
+			],
+		},
+	},
+
+	# Which star system filter (from "starSystemFilters") to use when searching
+	# for Tesseract locations and variants
+	"tesseractStarSystemFilter": "hypershunt",
+
 	# Settings for the planet filters.
 	# Star systems tagged as "theme_core", "theme_hidden", or "system_abyssal"
 	# will be skipped regardless of the filter settings.
-	"planetFilters": [
-		{
+	"planetFilters": {
+		"example": {
 			# Name of the filter, which will be displayed on the report.
 			"filterName": "Example filter",
+
+			# If specified, any seed that passes this filter will be saved to seedreporter_savedSeeds.json,
+			# using the given shorthand alongside the seed string information
+			"saveShorthand": "e.g.",
 
 			# If true, the filter will be activated when running the report.
 			"isEnabled": false,
 
 			# If specified, only planets within the specified LY from the market center of mass will show up
-			"distanceFromCOM": 25,
+			"distanceFromCOM": 25.0,
 
-			# If true, only planets in systems containing a Gate will show up.
-			"inGateSystem": false,
+			# If specified, the planet must not be in a system with any of these system tags
+			"avoidSystemTags": [
+				"theme_hidden",
+				"theme_core",
+				"system_abyssal"
+			],
 
-			# If true, only planets within 10 LY of a Domain-era Cryosleeper will show up.
-			# More specifically, they must be near a system tagged with "theme_derelict_cryosleeper".
-			"inDomainCryosleeperRange": false,
+			# If specified, the planet must be in or near a system specified in "starSystemFilters"
+			# If a number is included, the planet must be at most that much LY away from the nearest system satisfying the filter
+			"inStarSystemFilters": [
+				"gate",
+				["domainCryosleeper",10.0],
+				["coronalHypershunt",10.0]
+			],
 
-			# If true, only planets within 10 LY of a Coronal Hypershunt will show up.
-			# More specifically, they must be near a system tagged with "has_coronal_tap".
-			"inCoronalHypershuntRange": false,
-
-			# If specified, only planets in systems with at least the specified number of stable locations will show up
+			# Only planets in systems with at least the specified number of stable locations will show up
 			# Includes both empty stable locations and system objectives like Comm Relays, Sensor Arrays, or Nav Buoys
 			"numStableLocations": 3,
+
+			# Only planets in systems with at most the specified hazard value will show up
+			"maxHazardValue": 0,
 
 			# Only these planet types will show up in the filter.
 			# Defining this can speed up the search by avoiding the need to manually search
@@ -150,13 +259,15 @@
 				"volatiles_abundant",
 				"volatiles_plentiful",
 			],
-
-			# If true, saves the sector seed to file if a planet matching this filter is found
-			"saveSeedIfFound": false,
 		},
-		{
+		"orbitalSolarArray": {
 			"filterName": "Orbital Solar Array planets",
 			"isEnabled": true,
+			"avoidSystemTags": [
+				"theme_hidden",
+				"theme_core",
+				"system_abyssal"
+			],
 			"matchesPlanetTypes": [
 				# Orbital Solar Arrays only appear on "cat_hab1", "cat_hab2", and "cat_hab3" planets.
 				# Thus, Terran planets (which are in "cat_hab4") cannot get the condition.
@@ -173,9 +284,15 @@
 				"solar_array"
 			],
 		},
-		{
+		"miningBore": {
 			"filterName": "Autonomous Mining Bore with all 4 resources",
+			"saveShorthand": "A",
 			"isEnabled": true,
+			"avoidSystemTags": [
+				"theme_hidden",
+				"theme_core",
+				"system_abyssal"
+			],
 			"matchesPlanetTypes": [
 				"toxic",
 				"barren-desert"
@@ -201,13 +318,19 @@
 				"organics_plentiful"
 			],
 			"matchesAtLeast": 4,
-			"saveSeedIfFound": true,
 		},
-		{
+		"barrenGate": {
 			"filterName": "Barren in Gate system (20 LY)",
 			"isEnabled": true,
 			"distanceFromCOM": 20,
-			"inGateSystem": true,
+			"avoidSystemTags": [
+				"theme_hidden",
+				"theme_core",
+				"system_abyssal"
+			],
+			"inStarSystemFilters": [
+				"gate"
+			],
 			"maxHazardValue": 175, # Only 1 25% hazard rating condition
 			"matchesPlanetTypes": [
 				"barren",
@@ -221,11 +344,19 @@
 				"barren-bombarded"
 			]
 		},
-		{
+		"gasGiant": {
 			"filterName": "Gas Giant with Plentiful Volatiles in Gate system (20 LY)",
+			"saveShorthand": "G",
 			"isEnabled": true,
 			"distanceFromCOM": 20,
-			"inGateSystem": true,
+			"avoidSystemTags": [
+				"theme_hidden",
+				"theme_core",
+				"system_abyssal"
+			],
+			"inStarSystemFilters": [
+				"gate"
+			],
 			"maxHazardValue": 175, # Only one 25% hazard rating condition at most
 			"matchesPlanetTypes": [
 				"gas_giant",
@@ -239,11 +370,15 @@
 				"extreme_weather",
 				"poor_light"
 			],
-			"saveSeedIfFound": true
 		},
-		{
+		"soilNanites": {
 			"filterName": "Soil Nanites and Fullerene Spool on non-decivilized world",
 			"isEnabled": true,
+			"avoidSystemTags": [
+				"theme_hidden",
+				"theme_core",
+				"system_abyssal"
+			],
 			"matchesPlanetTypes": [
 				"terran",
 				"terran-eccentric",
@@ -276,15 +411,15 @@
 				"decivilized"
 			]
 		},
-		{
+		"US_sakura": {
 			"filterName": "Sakura planet (from the Unknown Skies mod)",
 			"isEnabled": false,
 			"matchesPlanetTypes": [
 				"US_sakura"
 			]
 		}
-	],
-	
+	},
+
 	# Save the seed if any of these exceptional officer template combinations are found.
 	# The skill set for each template is found in "exceptionalOfficerTemplates".
 	"exceptionalOfficerSearch": [

@@ -1,11 +1,25 @@
 Version 0.3.0
 
+* Overhauled the layout of the SEED report output
+* Replaced the hard-coded system search with the "starSystemFilters" setting in seedreporterSettings.json
+  - Allows searching for star systems that fit a certain criteria
+* Added "tesseractStarSystemFilter" setting
+  - Specifies which star system filter to use when searching for Tesseracts (should the Coronal Hypershunt filter be modified)
+* Replaced "saveSeedIfFound" option with "saveShorthand"
+  - "saveShorthand" enables configuring the filter's shorthand when printing the seed
+  - Having a filter (either planet or system) with a specified "saveShorthand" now saves the seed if a planet/system passes the filter
+* Added "avoidSystemTags" option for "planetFilters"
+  - Replaces the hard-coded system tag filter for planets
+* Replaced "inGateSystem", "inDomainCryosleeperRange", and "inCoronalHypershuntRange" options with "inStarSystemFilters"
+  - Allows searching for planets that are also either inside or near a filtered star system
 * Added "runSEEDReportOnGameStart" setting to seedreporterSettings.json
   - Can be set to "false" to disable automatically running a report upon starting a new game
-* Added LunaLib setting support for "runSEEDReportOnGameStart"
+* Added LunaLib setting support
+  - Only "runSEEDReportOnGameStart" is supported at this time
 * Fixed exceptional officer search not correctly handling combinations containing at least two different templates
-* Renamed "distanceFromCore" to "distanceFromCOM"
+* Renamed "distanceFromCore" option to "distanceFromCOM"
   - Now uses the market center of mass calculation (instead of a hard-coded value) to determine distance
+* Significant code refactors
 
 
 
