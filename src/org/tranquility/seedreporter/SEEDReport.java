@@ -224,19 +224,20 @@ public class SEEDReport {
 
         if (!filterShorthand.isEmpty() || exceptionalFilterPass || sameTesseractVariants) {
             try {
+                String seedString = createSeedString(exceptionalFilterPass, sameTesseractVariants, exceptionalShorthand, variantShorthand, filterShorthand);
+
                 JSONObject json;
                 if (Global.getSettings().fileExistsInCommon(REPORT_FILE_NAME)) {
                     json = Global.getSettings().readJSONFromCommon(REPORT_FILE_NAME, false);
                     JSONArray versionSeeds = json.getJSONArray(Global.getSettings().getGameVersion());
-                    versionSeeds.put(createSeedString(exceptionalFilterPass, sameTesseractVariants, exceptionalShorthand, variantShorthand, filterShorthand));
-                    Global.getSettings().writeJSONToCommon(REPORT_FILE_NAME, json, false);
+                    versionSeeds.put(seedString);
                 } else {
                     json = new JSONObject();
                     JSONArray versionSeeds = new JSONArray();
                     json.put(Global.getSettings().getGameVersion(), versionSeeds);
-                    versionSeeds.put(createSeedString(exceptionalFilterPass, sameTesseractVariants, exceptionalShorthand, variantShorthand, filterShorthand));
-                    Global.getSettings().writeJSONToCommon(REPORT_FILE_NAME, json, false);
+                    versionSeeds.put(seedString);
                 }
+                Global.getSettings().writeJSONToCommon(REPORT_FILE_NAME, json, false);
 
                 if (!filterShorthand.isEmpty())
                     print.append("\nFound a system or planet matching a \"saveShorthand\" filter!");
@@ -247,7 +248,7 @@ public class SEEDReport {
                 if (sameTesseractVariants)
                     print.append("\nFound all Tesseract variants to be identical! Defeat them in-battle to verify their weapon drops!");
 
-                print.append(String.format("\nWrote seed to Starsector/saves/common/%s!", REPORT_FILE_NAME));
+                print.append(String.format("\nWrote seed to Starsector/saves/common/%s:\n\"%s\"", REPORT_FILE_NAME, seedString));
             } catch (JSONException | IOException e) {
                 print.append("\nFailed to write seed to file!");
                 return print.toString();

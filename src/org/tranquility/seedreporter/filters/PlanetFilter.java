@@ -61,29 +61,31 @@ public class PlanetFilter {
         for (StarSystemAPI system : Global.getSector().getStarSystems()) {
             if (Misc.getDistanceLY(system.getLocation(), centerOfMass) > distanceFromCOM) continue;
 
-            if (!Collections.disjoint(system.getTags(), avoidSystemTags)) continue;
+            if (avoidSystemTags != null && !Collections.disjoint(system.getTags(), avoidSystemTags)) continue;
 
             // Check if this system is in all the specified filter systems
-            boolean allSystemPass = true;
+            boolean allFilterSystemPass = true;
             if (searchSystems != null) for (Pair<String, Float> searchSystemPair : searchSystems) {
                 if (!filterSystems.containsKey(searchSystemPair.one)) {
-                    allSystemPass = false;
+                    allFilterSystemPass = false;
                     break;
                 }
 
-                boolean filterSystemPass = false;
-                for (StarSystemAPI filterSystem : filterSystems.get(searchSystemPair.one))
+                boolean thisFilterSystemPass = false;
+                if (searchSystemPair.two <= 0f) {
+                    if (filterSystems.get(searchSystemPair.one).contains(system)) thisFilterSystemPass = true;
+                } else for (StarSystemAPI filterSystem : filterSystems.get(searchSystemPair.one))
                     if (Misc.getDistanceLY(filterSystem.getLocation(), system.getLocation()) <= searchSystemPair.two) {
-                        filterSystemPass = true;
+                        thisFilterSystemPass = true;
                         break;
                     }
 
-                if (!filterSystemPass) {
-                    allSystemPass = false;
+                if (!thisFilterSystemPass) {
+                    allFilterSystemPass = false;
                     break;
                 }
             }
-            if (!allSystemPass) continue;
+            if (!allFilterSystemPass) continue;
 
             if (numStableLocations > 0) if (Misc.getNumStableLocations(system) < numStableLocations) continue;
 

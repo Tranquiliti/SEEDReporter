@@ -1,3 +1,11 @@
+Version 0.3.1
+
+* Fixed crash when a planet filter has no specified "avoidSystemTags"
+* Slight performance improvement when using "inStarSystemFilters"
+* SEED Report now prints the saved seed string (if any) to the console
+
+
+
 Version 0.3.0
 
 * Overhauled the layout of the SEED report output

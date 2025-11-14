@@ -68,14 +68,11 @@ public class ExceptionalOfficerFilter {
                 officerSkills.add(skill.getSkill().getId());
 
             // Templates which are a subset of another template may get ignored here - that's fine for now
-            for (String templateId : templateSkillSetMap.keySet()) {
-                Set<String> difference = new HashSet<>(templateSkillSetMap.get(templateId));
-                difference.removeAll(officerSkills);
-                if (difference.isEmpty()) {
+            for (String templateId : templateSkillSetMap.keySet())
+                if (officerSkills.containsAll(templateSkillSetMap.get(templateId))) {
                     templateCountMap.merge(templateId, 1, Integer::sum);
                     break;
                 }
-            }
         }
 
         for (Map<String, Integer> templateCombination : searchTemplateCombinationList) {

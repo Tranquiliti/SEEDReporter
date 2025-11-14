@@ -41,7 +41,7 @@ public class StarSystemFilter {
         }
 
         for (StarSystemAPI system : systems) {
-            if (avoidTags != null) if (!Collections.disjoint(system.getTags(), avoidTags)) continue;
+            if (avoidTags != null && !Collections.disjoint(system.getTags(), avoidTags)) continue;
 
             if (searchTags != null && !system.getTags().containsAll(searchTags)) continue;
 
