@@ -95,11 +95,9 @@ public class SEEDReport {
                 JSONObject planetFilterSetting = planetFilterList.optJSONObject(filterId);
                 if (planetFilterSetting == null) continue;
 
-                if (planetFilterSetting.optBoolean("isEnabled", true)) {
-                    PlanetFilter newFilter = new PlanetFilter(planetFilterSetting);
-                    planetFilterMap.put(filterId, newFilter);
-                }
-
+                // Load all planet filters - they're either standalone (with saveShorthand) or components (used by system filters)
+                PlanetFilter newFilter = new PlanetFilter(planetFilterSetting);
+                planetFilterMap.put(filterId, newFilter);
             }
         }
 
@@ -118,17 +116,20 @@ public class SEEDReport {
      */
     public String run() {
         centerOfMass = CommodityMarketData.computeCenterOfMass(null, null);
-        Map<String, Set<StarSystemAPI>> starSystemListMap = new HashMap<>();
-        Map<String, Set<PlanetAPI>> planetListMap = new HashMap<>();
 
-        for (String filterId : starSystemFilterMap.keySet()) {
-            StarSystemFilter systemFilter = starSystemFilterMap.get(filterId);
-            starSystemListMap.put(filterId, systemFilter.run());
-        }
-
+        // Phase 1: Run all planet filters (no dependencies)
+        Map<String, Map<StarSystemAPI, Set<PlanetAPI>>> planetFilterResults = new HashMap<>();
         for (String filterId : planetFilterMap.keySet()) {
             PlanetFilter planetFilter = planetFilterMap.get(filterId);
-            planetListMap.put(filterId, planetFilter.run(centerOfMass, starSystemListMap));
+            planetFilterResults.put(filterId, planetFilter.run());
+        }
+
+        // Phase 2: Run all star system filters (can use planet filter results and other system filter results)
+        // Note: Filters are executed in order, so later filters can reference earlier ones via nearSystemFilters
+        Map<String, Set<StarSystemAPI>> starSystemListMap = new HashMap<>();
+        for (String filterId : starSystemFilterMap.keySet()) {
+            StarSystemFilter systemFilter = starSystemFilterMap.get(filterId);
+            starSystemListMap.put(filterId, systemFilter.run(centerOfMass, planetFilterResults, starSystemListMap));
         }
 
         Set<SectorEntityToken> officersInSalvage = ExceptionalOfficerFilter.getExceptionalOfficerSalvage();
@@ -144,25 +145,32 @@ public class SEEDReport {
             StarSystemFilter systemFilter = starSystemFilterMap.get(filterId);
             print.append(String.format(SECTION_TITLE_BORDER, systemFilter.filterName));
 
-            for (StarSystemAPI system : starSystemListMap.get(filterId))
+            for (StarSystemAPI system : starSystemListMap.get(filterId)) {
                 print.append(String.format("%s - %s\n", getHyperspaceCoordinates(system), system.getName()));
+
+                // If this filter specifies planet requirements, show which planets matched
+                if (systemFilter.hasPlanets != null && !systemFilter.hasPlanets.isEmpty()) {
+                    Set<PlanetAPI> allMatchingPlanets = new HashSet<>();
+
+                    // Collect all planets that matched any of the required filters
+                    for (String planetFilterId : systemFilter.hasPlanets) {
+                        if (planetFilterResults.containsKey(planetFilterId) &&
+                            planetFilterResults.get(planetFilterId).containsKey(system)) {
+                            allMatchingPlanets.addAll(planetFilterResults.get(planetFilterId).get(system));
+                        }
+                    }
+
+                    // Print each matching planet with indentation
+                    for (PlanetAPI planet : allMatchingPlanets) {
+                        print.append(String.format("  %.0f%%, %s\n",
+                            planet.getMarket().getHazardValue() * 100f,
+                            planet.getName()));
+                    }
+                }
+            }
 
             if (systemFilter.saveShorthand != null && !starSystemListMap.get(filterId).isEmpty())
                 filterShorthand.append(systemFilter.saveShorthand);
-        }
-
-        // Printing planet filter lists
-        for (String filterId : planetListMap.keySet()) {
-            PlanetFilter planetFilter = planetFilterMap.get(filterId);
-            print.append(String.format(SECTION_TITLE_BORDER, planetFilter.filterName));
-
-            for (PlanetAPI planet : planetListMap.get(filterId)) {
-                StarSystemAPI planetSystem = planet.getStarSystem();
-                print.append(String.format("%.0f%%, %s - %s (%s)\n", planet.getMarket().getHazardValue() * 100f, getHyperspaceCoordinates(planetSystem), planet.getName(), planetSystem));
-            }
-
-            if (planetFilter.saveShorthand != null && !planetListMap.get(filterId).isEmpty())
-                filterShorthand.append(planetFilter.saveShorthand);
         }
 
         // Printing exceptional officers
