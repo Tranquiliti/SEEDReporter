@@ -6,10 +6,29 @@
 	# If true, a SEED Report will be executed upon starting a new game
 	"runSEEDReportOnGameStart": true,
 
+	# ============================================================================
+	# IMPORTANT: Star System Filter Execution Order
+	# ============================================================================
+	# Star system filters are executed in the order they appear in this file.
+	# If filterB references filterA via nearSystemFiltersRequired or
+	# nearSystemFiltersOptional, then filterA MUST be defined BEFORE filterB.
+	#
+	# Recommended order:
+	#   1. Base filters (gate, hypershunt, cryosleeper, etc.)
+	#   2. Compound filters that reference base filters
+	#   3. Complex filters that reference compound filters
+	#
+	# Example:
+	#   "hypershunt": {...},                    // Define first
+	#   "nearHypershunt": {                     // Can reference "hypershunt"
+	#     "nearSystemFiltersRequired": [["hypershunt", 10.0]]
+	#   }
+	# ============================================================================
+
 	"starSystemFilters": {
 		"example": {
 			# Name of the filter, which will be displayed on the report.
-			"filterName": "Example filter",
+			"filterName": "Example system filter",
 
 			# If specified, any seed that passes this filter will be saved to seedreporter_savedSeeds.json,
 			# using the given shorthand alongside the seed string information
@@ -31,9 +50,54 @@
 				"theme_core"
 			],
 
-			# If specified, Oonly search for systems that contain an entity with all specified tags
+			# If specified, only search for systems that contain an entity with all specified tags
 			"hasEntityWithTags": [
 				"station"
+			],
+			
+			# If specified, only systems within this distance (LY) from the market center of mass will match
+			"distanceFromCOM": 25.0,
+			
+			# If specified, only systems with at least this many stable locations will match
+			# Includes both empty stable locations and system objectives like Comm Relays, Sensor Arrays, or Nav Buoys
+			"numStableLocations": 3,
+			
+			# If specified, only systems near (within X LY of) systems from other filters will match (REQUIRED)
+			# Can specify just filter name (must be IN that system) or [filter name, distance]
+			# Examples:
+			#   ["gate"]                           - Must have a gate
+			#   [["domainCryosleeper", 5.0]]       - Within 5 LY of a cryosleeper
+			#   ["gate", ["hypershunt", 10.0]]     - Must have a gate AND be within 10 LY of hypershunt
+			"nearSystemFiltersRequired": [
+				"gate",
+				["domainCryosleeper", 10.0],
+				["hypershunt", 10.0]
+			],
+			
+			# Optional proximity - nice to have, shown in output with + prefix
+			"nearSystemFiltersOptional": [
+				["hypershunt", 5.0]
+			],
+			
+			# If specified, only systems that contain ALL of these planets will match (AND logic)
+			# Planet filter IDs reference filters defined in "planetFilters" section
+			# Can specify count: ["habitablePlanet", 3] means at least 3 habitable planets
+			# When planet requirements are used, the report shows which planets matched
+			"hasPlanetsRequired": [
+				["habitablePlanet", 2],    # At least 2 habitable planets
+				"noAtmospherePlanet"       # At least 1 barren planet
+			],
+			
+			# If specified, only systems with AT LEAST ONE of these planets will match (OR logic)
+			# Only one OR block is supported per filter
+			"hasPlanetsOneOf": [
+				"gasGiant",
+				"solarArrayPlanet"
+			],
+			
+			# Optional planets - nice to have, shown in output with + prefix
+			"hasPlanetsOptional": [
+				"farmingPlanet"
 			]
 		},
 		"sentinel": {
@@ -98,55 +162,151 @@
 				"gate"
 			],
 		},
+		"barrenGateSystem": {
+			"filterName": "System with gate and Barren planet (20 LY)",
+			"isEnabled": true,
+			"distanceFromCOM": 20,
+			"avoidTags": [
+				"theme_hidden",
+				"theme_core",
+				"theme_abyssal"
+			],
+			"hasEntityWithTags": [
+				"gate"
+			],
+			"hasPlanetsRequired": [
+				"barrenLowHazard"
+			]
+		},
+		"gasGiantGateSystem": {
+			"filterName": "System with gate and Gas Giant (Plentiful Volatiles, 20 LY)",
+			"saveShorthand": "G",
+			"isEnabled": true,
+			"distanceFromCOM": 20,
+			"avoidTags": [
+				"theme_hidden",
+				"theme_core",
+				"theme_abyssal"
+			],
+			"hasEntityWithTags": [
+				"gate"
+			],
+			"hasPlanetsRequired": [
+				"gasGiantPlentifulVolatiles"
+			]
+		},
+		"orbitalSolarArraySystem": {
+			"filterName": "Orbital Solar Array planets",
+			"saveShorthand": "S",
+			"isEnabled": true,
+			"avoidTags": [
+				"theme_hidden",
+				"theme_core",
+				"theme_abyssal"
+			],
+			"hasPlanetsRequired": [
+				"orbitalSolarArrayPlanet"
+			]
+		},
+		"miningBoreSystem": {
+			"filterName": "Autonomous Mining Bore with all 4 resources",
+			"saveShorthand": "A",
+			"isEnabled": true,
+			"avoidTags": [
+				"theme_hidden",
+				"theme_core",
+				"theme_abyssal"
+			],
+			"hasPlanetsRequired": [
+				"miningBorePlanet"
+			]
+		},
+		"soilNanitesSystem": {
+			"filterName": "Soil Nanites and Fullerene Spool on non-decivilized world",
+			"saveShorthand": "N",
+			"isEnabled": true,
+			"avoidTags": [
+				"theme_hidden",
+				"theme_core",
+				"theme_abyssal"
+			],
+			"hasPlanetsRequired": [
+				"soilNanitesPlanet"
+			]
+		},
+		"basicOneSystemBuild": {
+			"filterName": "Basic one-system colony build",
+			"saveShorthand": "1SYS",
+			"isEnabled": true,
+			"distanceFromCOM": 25,
+			"avoidTags": [
+				"theme_hidden",
+				"theme_core",
+				"theme_abyssal"
+			],
+			"hasPlanetsRequired": [
+				"habitablePlanet",
+				"farmingPlanet",
+				"noAtmospherePlanet",
+				"planetWithOres",
+				"planetWithOrganics",
+				"gasGiantAny"
+			],
+			"nearSystemFiltersOptional": [
+				"gate",
+				["hypershunt", 10.0],
+				["domainCryosleeper", 10.0]
+			]
+		},
+		"multiHabitableSystem": {
+			"filterName": "System with 3+ habitable planets",
+			"saveShorthand": "3HAB",
+			"isEnabled": true,
+			"distanceFromCOM": 25,
+			"avoidTags": [
+				"theme_hidden",
+				"theme_core",
+				"theme_abyssal"
+			],
+			"hasPlanetsRequired": [
+				["habitablePlanet", 3]
+			],
+			"hasPlanetsOptional": [
+				"noAtmospherePlanet",
+				"planetWithOres",
+				"planetWithOrganics",
+				"farmingPlanet",
+				"gasGiantAny"
+			],
+			"nearSystemFiltersOptional": [
+				"gate",
+				["hypershunt", 10.0],
+				["domainCryosleeper", 10.0]
+			]
+		},
 	},
 
 	# Which star system filter (from "starSystemFilters") to use when searching
 	# for Tesseract locations and variants
 	"tesseractStarSystemFilter": "hypershunt",
 
-	# Settings for the planet filters.
-	# Star systems tagged as "theme_core", "theme_hidden", or "system_abyssal"
-	# will be skipped regardless of the filter settings.
+	# Planet filter definitions
+	# Planet filters define reusable planet search criteria that can be referenced by star system filters
+	# All planet filters are component filters - they are not run standalone but used by system filters
 	"planetFilters": {
 		"example": {
-			# Name of the filter, which will be displayed on the report.
-			"filterName": "Example filter",
+			# Name of the filter, which will be displayed on the report if saveShorthand is specified
+			"filterName": "Example planet filter",
 
 			# If specified, any seed that passes this filter will be saved to seedreporter_savedSeeds.json,
-			# using the given shorthand alongside the seed string information
-			"saveShorthand": "e.g.",
+			# This also causes the filter results to be printed in the report
+			# "saveShorthand": "e.g.",  # Commented out so this example doesn't actually run
 
-			# If true, the filter will be activated when running the report.
-			"isEnabled": false,
+			# Only planets with at most this hazard value will match (0-400, where 100 = 100% hazard)
+			"maxHazardValue": 175,
 
-			# If specified, only planets within the specified LY from the market center of mass will show up
-			"distanceFromCOM": 25.0,
-
-			# If specified, the planet must not be in a system with any of these system tags
-			"avoidSystemTags": [
-				"theme_hidden",
-				"theme_core",
-				"system_abyssal"
-			],
-
-			# If specified, the planet must be in or near a system specified in "starSystemFilters"
-			# If a number is included, the planet must be at most that much LY away from the nearest system satisfying the filter
-			"inStarSystemFilters": [
-				"gate",
-				["domainCryosleeper",10.0],
-				["coronalHypershunt",10.0]
-			],
-
-			# Only planets in systems with at least the specified number of stable locations will show up
-			# Includes both empty stable locations and system objectives like Comm Relays, Sensor Arrays, or Nav Buoys
-			"numStableLocations": 3,
-
-			# Only planets in systems with at most the specified hazard value will show up
-			"maxHazardValue": 0,
-
-			# Only these planet types will show up in the filter.
-			# Defining this can speed up the search by avoiding the need to manually search
-			# all conditions in planets that can never host the desired conditions.
+			# Only these planet types will match
+			# Defining this speeds up searches by skipping planets that can't have desired conditions
 			"matchesPlanetTypes": [
 				"gas_giant",
 				"ice_giant",
@@ -180,8 +340,7 @@
 				"barren-desert",
 			],
 
-			# The planet must have a specified number or all of these conditions
-			# to show up in the SEED report.
+			# The planet must have these conditions to match
 			"matchesConditions": [
 				"habitable",
 				"cold",
@@ -236,184 +395,97 @@
 				"solar_array",
 			],
 
-			# Use alongside the "matchesConditions" option!
-			# Show only planets that match at least the specified number.
-			# of conditions - useful if searching within condition groups, like resource deposits.
-			# If omitted, the planet must match ALL conditions in "matchesConditions"
-			# to show up in the SEED report.
+			# Use alongside "matchesConditions"!
+			# Planet must match at least this many conditions (useful for resource deposit groups)
+			# If omitted, planet must match ALL conditions in "matchesConditions"
 			"matchesAtLeast": 4,
 
-			# Planets with the conditions specified here will not
-			# show up in the report.
+			# Planets with any of these conditions will NOT match
 			"avoidConditions": [
-				"habitable",
 				"extreme_tectonic_activity",
 				"extreme_weather",
-				"rare_ore_sparse",
-				"rare_ore_moderate",
-				"rare_ore_abundant",
-				"rare_ore_rich",
-				"rare_ore_ultrarich",
-				"volatiles_trace",
-				"volatiles_diffuse",
-				"volatiles_abundant",
-				"volatiles_plentiful",
 			],
 		},
-		"orbitalSolarArray": {
-			"filterName": "Orbital Solar Array planets",
-			"isEnabled": true,
-			"avoidSystemTags": [
-				"theme_hidden",
-				"theme_core",
-				"system_abyssal"
-			],
-			"matchesPlanetTypes": [
-				# Orbital Solar Arrays only appear on "cat_hab1", "cat_hab2", and "cat_hab3" planets.
-				# Thus, Terran planets (which are in "cat_hab4") cannot get the condition.
-				"terran-eccentric",
-				"jungle",
-				"water",
-				"arid",
-				"tundra",
-				"desert",
-				"desert1",
-				"barren-desert",
-			],
+		
+		# Component filters - used by system filters, not reported standalone
+		"barrenLowHazard": {
+			"filterName": "Barren (<175%)",
+			"matchesPlanetTypes": ["barren", "barren_castiron", "barren2", "barren3", "barren_venuslike", "rocky_metallic", "rocky_unstable", "rocky_ice", "barren-bombarded"],
+			"maxHazardValue": 175
+		},
+		"gasGiantPlentifulVolatiles": {
+			"filterName": "Gas Giant (+2 volatiles, <175%)",
+			"matchesPlanetTypes": ["gas_giant", "ice_giant"],
+			"matchesConditions": ["volatiles_plentiful"],
+			"maxHazardValue": 175,
+			"avoidConditions": ["extreme_weather", "poor_light"]
+		},
+		"orbitalSolarArrayPlanet": {
+			"filterName": "Solar Array",
+			# Orbital Solar Arrays only appear on "cat_hab1", "cat_hab2", and "cat_hab3" planets.
+			# Thus, Terran planets (which are in "cat_hab4") cannot get the condition.
+			"matchesPlanetTypes": ["terran-eccentric", "jungle", "water", "arid", "tundra", "desert", "desert1", "barren-desert"],
+			"matchesConditions": ["solar_array"]
+		},
+		"miningBorePlanet": {
+			"filterName": "Mining Bore (4 resources)",
+			"matchesPlanetTypes": ["toxic", "barren-desert"],
 			"matchesConditions": [
-				"solar_array"
+				"ore_sparse", "ore_moderate", "ore_abundant", "ore_rich", "ore_ultrarich",
+				"rare_ore_sparse", "rare_ore_moderate", "rare_ore_abundant", "rare_ore_rich", "rare_ore_ultrarich",
+				"volatiles_trace", "volatiles_diffuse", "volatiles_abundant", "volatiles_plentiful",
+				"organics_trace", "organics_common", "organics_abundant", "organics_plentiful"
 			],
+			"matchesAtLeast": 4
 		},
-		"miningBore": {
-			"filterName": "Autonomous Mining Bore with all 4 resources",
-			"saveShorthand": "A",
-			"isEnabled": true,
-			"avoidSystemTags": [
-				"theme_hidden",
-				"theme_core",
-				"system_abyssal"
-			],
-			"matchesPlanetTypes": [
-				"toxic",
-				"barren-desert"
-			],
-			"matchesConditions": [
-				"ore_sparse",
-				"ore_moderate",
-				"ore_abundant",
-				"ore_rich",
-				"ore_ultrarich",
-				"rare_ore_sparse",
-				"rare_ore_moderate",
-				"rare_ore_abundant",
-				"rare_ore_rich",
-				"rare_ore_ultrarich",
-				"volatiles_trace",
-				"volatiles_diffuse",
-				"volatiles_abundant",
-				"volatiles_plentiful",
-				"organics_trace",
-				"organics_common",
-				"organics_abundant",
-				"organics_plentiful"
-			],
-			"matchesAtLeast": 4,
-		},
-		"barrenGate": {
-			"filterName": "Barren in Gate system (20 LY)",
-			"isEnabled": true,
-			"distanceFromCOM": 20,
-			"avoidSystemTags": [
-				"theme_hidden",
-				"theme_core",
-				"system_abyssal"
-			],
-			"inStarSystemFilters": [
-				"gate"
-			],
-			"maxHazardValue": 175, # Only 1 25% hazard rating condition
-			"matchesPlanetTypes": [
-				"barren",
-				"barren_castiron",
-				"barren2",
-				"barren3",
-				"barren_venuslike",
-				"rocky_metallic",
-				"rocky_unstable",
-				"rocky_ice",
-				"barren-bombarded"
-			]
-		},
-		"gasGiant": {
-			"filterName": "Gas Giant with Plentiful Volatiles in Gate system (20 LY)",
-			"saveShorthand": "G",
-			"isEnabled": true,
-			"distanceFromCOM": 20,
-			"avoidSystemTags": [
-				"theme_hidden",
-				"theme_core",
-				"system_abyssal"
-			],
-			"inStarSystemFilters": [
-				"gate"
-			],
-			"maxHazardValue": 175, # Only one 25% hazard rating condition at most
-			"matchesPlanetTypes": [
-				"gas_giant",
-				"ice_giant"
-			],
-			"matchesConditions": [
-				"volatiles_plentiful"
-			],
-			# Only allow either Hot or Cold (to enhance or neutralize with Orbital Fusion Lamp)
-			"avoidConditions": [
-				"extreme_weather",
-				"poor_light"
-			],
-		},
-		"soilNanites": {
-			"filterName": "Soil Nanites and Fullerene Spool on non-decivilized world",
-			"isEnabled": true,
-			"avoidSystemTags": [
-				"theme_hidden",
-				"theme_core",
-				"system_abyssal"
-			],
-			"matchesPlanetTypes": [
-				"terran",
-				"terran-eccentric",
-				"jungle",
-				"water",
-				"arid",
-				"tundra",
-				"desert",
-				"desert1",
-			],
-			"matchesConditions": [
-				"farmland_poor",
-				"farmland_adequate",
-				"farmland_rich",
-				"farmland_bountiful"
-			],
+		"soilNanitesPlanet": {
+			"filterName": "Nanites + Spool (non-deciv)",
+			"matchesPlanetTypes": ["terran", "terran-eccentric", "jungle", "water", "arid", "tundra", "desert", "desert1"],
+			"matchesConditions": ["farmland_poor", "farmland_adequate", "farmland_rich", "farmland_bountiful"],
 			"matchesAtLeast": 1,
 			"avoidConditions": [
-				"rare_ore_sparse",
-				"rare_ore_moderate",
-				"rare_ore_abundant",
-				"rare_ore_rich",
-				"rare_ore_ultrarich",
-				"volatiles_trace",
-				"volatiles_diffuse",
-				"volatiles_abundant",
-				"volatiles_plentiful",
-				"extreme_tectonic_activity",
-				"extreme_weather",
-				"decivilized"
+				"rare_ore_sparse", "rare_ore_moderate", "rare_ore_abundant", "rare_ore_rich", "rare_ore_ultrarich",
+				"volatiles_trace", "volatiles_diffuse", "volatiles_abundant", "volatiles_plentiful",
+				"extreme_tectonic_activity", "extreme_weather", "decivilized"
 			]
+		},
+		"habitablePlanet": {
+			"filterName": "Habitable",
+			"matchesPlanetTypes": ["terran", "terran-eccentric", "jungle", "water", "arid", "tundra", "desert", "desert1"],
+			"matchesConditions": ["habitable"]
+		},
+		"noAtmospherePlanet": {
+			"filterName": "No atmosphere",
+			"matchesConditions": ["no_atmosphere"]
+		},
+		"gasGiantAny": {
+			"filterName": "Gas/Ice Giant",
+			"matchesPlanetTypes": ["gas_giant", "ice_giant"]
+		},
+		"planetWithOres": {
+			"filterName": "Ore + Rare Ore",
+			"matchesConditions": [
+				"ore_sparse", "ore_moderate", "ore_abundant", "ore_rich", "ore_ultrarich",
+				"rare_ore_sparse", "rare_ore_moderate", "rare_ore_abundant", "rare_ore_rich", "rare_ore_ultrarich"
+			],
+			"matchesAtLeast": 2
+		},
+		"planetWithOrganics": {
+			"filterName": "Organics",
+			"matchesConditions": [
+				"organics_trace", "organics_common", "organics_abundant", "organics_plentiful"
+			],
+			"matchesAtLeast": 1
+		},
+		"farmingPlanet": {
+			"filterName": "Farmland",
+			"matchesConditions": [
+				"farmland_poor", "farmland_adequate", "farmland_rich", "farmland_bountiful"
+			],
+			"matchesAtLeast": 1
 		},
 		"US_sakura": {
 			"filterName": "Sakura planet (from the Unknown Skies mod)",
-			"isEnabled": false,
 			"matchesPlanetTypes": [
 				"US_sakura"
 			]

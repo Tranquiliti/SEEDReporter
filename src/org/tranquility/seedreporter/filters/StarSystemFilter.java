@@ -25,8 +25,15 @@ public class StarSystemFilter {
     public Set<String> entityTags;
     public float distanceFromCOM;
     public int numStableLocations;
-    public Set<String> hasPlanets;
-    public Map<String, Float> nearSystemFilters;  // System filter ID -> max distance in LY
+    
+    // Planet requirements
+    public Map<String, Integer> hasPlanetsRequired;  // planet filter ID -> min count (AND logic)
+    public Set<String> hasPlanetsOneOf;              // At least one of these (OR logic)
+    public Set<String> hasPlanetsOptional;           // Nice to have (shown in output)
+    
+    // System proximity requirements
+    public Map<String, Float> nearSystemFiltersRequired;  // System filter ID -> max distance in LY
+    public Map<String, Float> nearSystemFiltersOptional;  // Nice to have
 
     public StarSystemFilter(JSONObject settings) {
         filterName = settings.optString("filterName", "Star system filter locations");
@@ -36,29 +43,73 @@ public class StarSystemFilter {
         avoidTags = SEEDUtils.convertJSONArrayToSet(settings.optJSONArray("avoidTags"));
         searchTags = SEEDUtils.convertJSONArrayToSet(settings.optJSONArray("hasTags"));
         entityTags = SEEDUtils.convertJSONArrayToSet(settings.optJSONArray("hasEntityWithTags"));
-
+        
         distanceFromCOM = (float) settings.optDouble("distanceFromCOM", Float.MAX_VALUE);
         numStableLocations = settings.optInt("numStableLocations", 0);
-        hasPlanets = SEEDUtils.convertJSONArrayToSet(settings.optJSONArray("hasPlanets"));
-
-        // Parse nearSystemFilters: either ["filterName"] or [["filterName", distance]]
-        JSONArray nearArray = settings.optJSONArray("nearSystemFilters");
-        if (nearArray != null) {
-            nearSystemFilters = new HashMap<>();
-            for (int i = 0; i < nearArray.length(); i++) {
-                JSONArray pairArray = nearArray.optJSONArray(i);
+        
+        // Parse hasPlanetsRequired: either "planetId" or ["planetId", count]
+        JSONArray requiredArray = settings.optJSONArray("hasPlanetsRequired");
+        if (requiredArray != null) {
+            hasPlanetsRequired = new HashMap<>();
+            for (int i = 0; i < requiredArray.length(); i++) {
+                JSONArray pairArray = requiredArray.optJSONArray(i);
+                if (pairArray != null && pairArray.length() >= 2) {
+                    // ["habitablePlanet", 3] format
+                    String planetFilterId = pairArray.optString(0, null);
+                    int count = pairArray.optInt(1, 1);
+                    if (planetFilterId != null) {
+                        hasPlanetsRequired.put(planetFilterId, count);
+                    }
+                } else {
+                    // "habitablePlanet" format (count = 1)
+                    String planetFilterId = requiredArray.optString(i, null);
+                    if (planetFilterId != null) {
+                        hasPlanetsRequired.put(planetFilterId, 1);
+                    }
+                }
+            }
+        }
+        
+        // Parse hasPlanetsOneOf: simple string array
+        hasPlanetsOneOf = SEEDUtils.convertJSONArrayToSet(settings.optJSONArray("hasPlanetsOneOf"));
+        
+        // Parse hasPlanetsOptional: simple string array
+        hasPlanetsOptional = SEEDUtils.convertJSONArrayToSet(settings.optJSONArray("hasPlanetsOptional"));
+        
+        // Parse nearSystemFiltersRequired: either ["filterName"] or [["filterName", distance]]
+        JSONArray nearRequiredArray = settings.optJSONArray("nearSystemFiltersRequired");
+        if (nearRequiredArray != null) {
+            nearSystemFiltersRequired = new HashMap<>();
+            for (int i = 0; i < nearRequiredArray.length(); i++) {
+                JSONArray pairArray = nearRequiredArray.optJSONArray(i);
                 if (pairArray == null) {
                     // Simple string format: ["filterName"] means 0 LY (must be in system)
-                    nearSystemFilters.put(nearArray.optString(i), 0f);
+                    nearSystemFiltersRequired.put(nearRequiredArray.optString(i), 0f);
                 } else {
                     // Pair format: [["filterName", distance]]
-                    nearSystemFilters.put(pairArray.optString(0), (float) pairArray.optDouble(1));
+                    nearSystemFiltersRequired.put(pairArray.optString(0), (float) pairArray.optDouble(1));
+                }
+            }
+        }
+        
+        // Parse nearSystemFiltersOptional: either ["filterName"] or [["filterName", distance]]
+        JSONArray nearOptionalArray = settings.optJSONArray("nearSystemFiltersOptional");
+        if (nearOptionalArray != null) {
+            nearSystemFiltersOptional = new HashMap<>();
+            for (int i = 0; i < nearOptionalArray.length(); i++) {
+                JSONArray pairArray = nearOptionalArray.optJSONArray(i);
+                if (pairArray == null) {
+                    // Simple string format: ["filterName"] means 0 LY (must be in system)
+                    nearSystemFiltersOptional.put(nearOptionalArray.optString(i), 0f);
+                } else {
+                    // Pair format: [["filterName", distance]]
+                    nearSystemFiltersOptional.put(pairArray.optString(0), (float) pairArray.optDouble(1));
                 }
             }
         }
     }
 
-    public Set<StarSystemAPI> run(Vector2f centerOfMass,
+    public Set<StarSystemAPI> run(Vector2f centerOfMass, 
                                    Map<String, Map<StarSystemAPI, Set<PlanetAPI>>> planetFilterResults,
                                    Map<String, Set<StarSystemAPI>> starSystemListMap) {
         Set<StarSystemAPI> foundSystems = new HashSet<>();
@@ -75,7 +126,7 @@ public class StarSystemFilter {
         for (StarSystemAPI system : systems) {
             // Check distance from center of mass
             if (Misc.getDistanceLY(system.getLocation(), centerOfMass) > distanceFromCOM) continue;
-
+            
             // Check system tags to avoid
             if (avoidTags != null && !Collections.disjoint(system.getTags(), avoidTags)) continue;
 
@@ -92,26 +143,26 @@ public class StarSystemFilter {
                     }
                 if (!foundEntity) continue;
             }
-
+            
             // Check number of stable locations
             if (numStableLocations > 0 && Misc.getNumStableLocations(system) < numStableLocations) continue;
-
-            // Check proximity to other system filters
-            if (nearSystemFilters != null && !nearSystemFilters.isEmpty()) {
+            
+            // Check proximity to required system filters (must be near ALL)
+            if (nearSystemFiltersRequired != null && !nearSystemFiltersRequired.isEmpty()) {
                 boolean nearAllRequiredSystems = true;
-                for (String systemFilterId : nearSystemFilters.keySet()) {
-                    float maxDistance = nearSystemFilters.get(systemFilterId);
-
+                for (String systemFilterId : nearSystemFiltersRequired.keySet()) {
+                    float maxDistance = nearSystemFiltersRequired.get(systemFilterId);
+                    
                     // Check if this system filter exists and has results
                     if (!starSystemListMap.containsKey(systemFilterId)) {
                         nearAllRequiredSystems = false;
                         break;
                     }
-
+                    
                     boolean nearThisFilter = false;
                     if (maxDistance <= 0f) {
                         // Distance 0 means must be IN one of the filter systems
-                        if (starSystemListMap.get(systemFilterId).contains(system))
+                        if (starSystemListMap.get(systemFilterId).contains(system)) 
                             nearThisFilter = true;
                     } else {
                         // Check if within maxDistance of ANY system from this filter
@@ -122,7 +173,7 @@ public class StarSystemFilter {
                             }
                         }
                     }
-
+                    
                     if (!nearThisFilter) {
                         nearAllRequiredSystems = false;
                         break;
@@ -130,19 +181,40 @@ public class StarSystemFilter {
                 }
                 if (!nearAllRequiredSystems) continue;
             }
-
-            // Check system contains all required planet types
-            if (hasPlanets != null && !hasPlanets.isEmpty()) {
+            
+            // Check system contains required planets with minimum counts (must have ALL)
+            if (hasPlanetsRequired != null && !hasPlanetsRequired.isEmpty()) {
                 boolean hasAllRequiredPlanets = true;
-                for (String planetFilterId : hasPlanets) {
-                    // Check if this planet filter exists and has results for this system
-                    if (!planetFilterResults.containsKey(planetFilterId) ||
-                        !planetFilterResults.get(planetFilterId).containsKey(system)) {
+                for (String planetFilterId : hasPlanetsRequired.keySet()) {
+                    int requiredCount = hasPlanetsRequired.get(planetFilterId);
+                    
+                    // Count how many planets match this filter in this system
+                    int actualCount = 0;
+                    if (planetFilterResults.containsKey(planetFilterId) && 
+                        planetFilterResults.get(planetFilterId).containsKey(system)) {
+                        actualCount = planetFilterResults.get(planetFilterId).get(system).size();
+                    }
+                    
+                    if (actualCount < requiredCount) {
                         hasAllRequiredPlanets = false;
                         break;
                     }
                 }
                 if (!hasAllRequiredPlanets) continue;
+            }
+            
+            // Check system contains at least ONE of the oneOf planets (OR logic)
+            if (hasPlanetsOneOf != null && !hasPlanetsOneOf.isEmpty()) {
+                boolean hasAtLeastOne = false;
+                for (String planetFilterId : hasPlanetsOneOf) {
+                    // Check if this planet filter has results for this system
+                    if (planetFilterResults.containsKey(planetFilterId) && 
+                        planetFilterResults.get(planetFilterId).containsKey(system)) {
+                        hasAtLeastOne = true;
+                        break;
+                    }
+                }
+                if (!hasAtLeastOne) continue;
             }
 
             foundSystems.add(system);
