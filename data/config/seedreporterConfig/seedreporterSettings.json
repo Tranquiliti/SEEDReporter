@@ -54,16 +54,16 @@
 			"hasEntityWithTags": [
 				"station"
 			],
-			
+
 			# If specified, only systems within this distance (LY) from the market center of mass will match
 			"distanceFromCOM": 25.0,
-			
+
 			# If specified, only systems with at least this many stable locations will match
 			# Includes both empty stable locations and system objectives like Comm Relays, Sensor Arrays, or Nav Buoys
 			"numStableLocations": 3,
-			
-			# If specified, only systems near (within X LY of) systems from other filters will match (REQUIRED)
-			# Can specify just filter name (must be IN that system) or [filter name, distance]
+
+			# If specified, only systems near (within X LY of) systems from other filters will match
+			# Can specify just filter name (must be in that system) or [filter name, distance]
 			# Examples:
 			#   ["gate"]                           - Must have a gate
 			#   [["domainCryosleeper", 5.0]]       - Within 5 LY of a cryosleeper
@@ -73,13 +73,13 @@
 				["domainCryosleeper", 10.0],
 				["hypershunt", 10.0]
 			],
-			
+
 			# Optional proximity - nice to have, shown in output with + prefix
 			"nearSystemFiltersOptional": [
 				["hypershunt", 5.0]
 			],
-			
-			# If specified, only systems that contain ALL of these planets will match (AND logic)
+
+			# If specified, only systems that contain all of these planets will match
 			# Planet filter IDs reference filters defined in "planetFilters" section
 			# Can specify count: ["habitablePlanet", 3] means at least 3 habitable planets
 			# When planet requirements are used, the report shows which planets matched
@@ -87,14 +87,14 @@
 				["habitablePlanet", 2],    # At least 2 habitable planets
 				"noAtmospherePlanet"       # At least 1 barren planet
 			],
-			
-			# If specified, only systems with AT LEAST ONE of these planets will match (OR logic)
+
+			# If specified, only systems with at least one of these planets will match
 			# Only one OR block is supported per filter
 			"hasPlanetsOneOf": [
 				"gasGiant",
 				"solarArrayPlanet"
 			],
-			
+
 			# Optional planets - nice to have, shown in output with + prefix
 			"hasPlanetsOptional": [
 				"farmingPlanet"
@@ -298,10 +298,6 @@
 			# Name of the filter, which will be displayed on the report if saveShorthand is specified
 			"filterName": "Example planet filter",
 
-			# If specified, any seed that passes this filter will be saved to seedreporter_savedSeeds.json,
-			# This also causes the filter results to be printed in the report
-			# "saveShorthand": "e.g.",  # Commented out so this example doesn't actually run
-
 			# Only planets with at most this hazard value will match (0-400, where 100 = 100% hazard)
 			"maxHazardValue": 175,
 
@@ -406,8 +402,6 @@
 				"extreme_weather",
 			],
 		},
-		
-		# Component filters - used by system filters, not reported standalone
 		"barrenLowHazard": {
 			"filterName": "Barren (<175%)",
 			"matchesPlanetTypes": ["barren", "barren_castiron", "barren2", "barren3", "barren_venuslike", "rocky_metallic", "rocky_unstable", "rocky_ice", "barren-bombarded"],
