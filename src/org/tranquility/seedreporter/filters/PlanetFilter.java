@@ -4,25 +4,16 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.PlanetAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.MarketConditionAPI;
-import com.fs.starfarer.api.util.Misc;
-import com.fs.starfarer.api.util.Pair;
-import org.json.JSONArray;
 import org.json.JSONObject;
-import org.lwjgl.util.vector.Vector2f;
 import org.tranquility.seedreporter.SEEDUtils;
 
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
 public class PlanetFilter {
     public String filterName;
-    public String saveShorthand;
-    public float distanceFromCOM;
-    public Set<String> avoidSystemTags;
-    public Set<Pair<String, Float>> searchSystems;
-    public int numStableLocations;
     public float maxHazardValue;
     public Set<String> matchesPlanetTypes;
     public Set<String> matchesConditions;
@@ -31,22 +22,11 @@ public class PlanetFilter {
 
     public PlanetFilter(JSONObject settings) {
         filterName = settings.optString("filterName", "Planet filter");
-        saveShorthand = settings.optString("saveShorthand", null);
-        distanceFromCOM = (float) settings.optDouble("distanceFromCOM", Float.MAX_VALUE);
-        avoidSystemTags = SEEDUtils.convertJSONArrayToSet(settings.optJSONArray("avoidSystemTags"));
 
-        JSONArray searchArray = settings.optJSONArray("inStarSystemFilters");
-        if (searchArray != null) {
-            searchSystems = new HashSet<>();
-            for (int i = 0; i < searchArray.length(); i++) {
-                JSONArray pairArray = searchArray.optJSONArray(i);
-                if (pairArray == null) searchSystems.add(new Pair<>(searchArray.optString(i), 0f));
-                else searchSystems.add(new Pair<>(pairArray.optString(0), (float) pairArray.optDouble(1)));
-            }
-        }
-
-        numStableLocations = settings.optInt("numStableLocations", 0);
-        maxHazardValue = settings.optInt("maxHazardValue", Integer.MAX_VALUE);
+        // Convert from percentage (0-400) to decimal (0.0-4.0)
+        // JSON config uses percentage for readability: 175 means 175% hazard
+        // Game uses decimal: 1.75 means 175% hazard
+        maxHazardValue = (float) settings.optDouble("maxHazardValue", Integer.MAX_VALUE) / 100f;
 
         matchesPlanetTypes = SEEDUtils.convertJSONArrayToSet(settings.optJSONArray("matchesPlanetTypes"));
         matchesConditions = SEEDUtils.convertJSONArrayToSet(settings.optJSONArray("matchesConditions"));
@@ -55,40 +35,10 @@ public class PlanetFilter {
         if (matchesConditions != null) matchesAtLeast = settings.optInt("matchesAtLeast", matchesConditions.size());
     }
 
-    public Set<PlanetAPI> run(Vector2f centerOfMass, Map<String, Set<StarSystemAPI>> filterSystems) {
-        Set<PlanetAPI> foundPlanets = new HashSet<>();
+    public Map<StarSystemAPI, Set<PlanetAPI>> run() {
+        Map<StarSystemAPI, Set<PlanetAPI>> foundPlanetsBySystem = new HashMap<>();
 
         for (StarSystemAPI system : Global.getSector().getStarSystems()) {
-            if (Misc.getDistanceLY(system.getLocation(), centerOfMass) > distanceFromCOM) continue;
-
-            if (avoidSystemTags != null && !Collections.disjoint(system.getTags(), avoidSystemTags)) continue;
-
-            // Check if this system is in all the specified filter systems
-            boolean allFilterSystemPass = true;
-            if (searchSystems != null) for (Pair<String, Float> searchSystemPair : searchSystems) {
-                if (!filterSystems.containsKey(searchSystemPair.one)) {
-                    allFilterSystemPass = false;
-                    break;
-                }
-
-                boolean thisFilterSystemPass = false;
-                if (searchSystemPair.two <= 0f) {
-                    if (filterSystems.get(searchSystemPair.one).contains(system)) thisFilterSystemPass = true;
-                } else for (StarSystemAPI filterSystem : filterSystems.get(searchSystemPair.one))
-                    if (Misc.getDistanceLY(filterSystem.getLocation(), system.getLocation()) <= searchSystemPair.two) {
-                        thisFilterSystemPass = true;
-                        break;
-                    }
-
-                if (!thisFilterSystemPass) {
-                    allFilterSystemPass = false;
-                    break;
-                }
-            }
-            if (!allFilterSystemPass) continue;
-
-            if (numStableLocations > 0) if (Misc.getNumStableLocations(system) < numStableLocations) continue;
-
             // Only check conditions if specified; otherwise, do not check them to slightly speed up search
             boolean checkAvoid = !(avoidConditions == null || avoidConditions.isEmpty());
             boolean checkMatch = !(matchesConditions == null || matchesConditions.isEmpty());
@@ -115,10 +65,12 @@ public class PlanetFilter {
                         if (matchesConditions.contains(condition.getId())) numMatches++;
                     if (numMatches < matchesAtLeast) continue;
                 }
-                foundPlanets.add(planet);
+
+                // Add planet to this system's set
+                foundPlanetsBySystem.computeIfAbsent(system, k -> new HashSet<>()).add(planet);
             }
         }
 
-        return foundPlanets;
+        return foundPlanetsBySystem;
     }
 }
