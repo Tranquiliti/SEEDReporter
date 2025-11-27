@@ -95,7 +95,7 @@ public class SEEDReport {
                 JSONObject planetFilterSetting = planetFilterList.optJSONObject(filterId);
                 if (planetFilterSetting == null) continue;
 
-                // Load all planet filters - they're either standalone (with saveShorthand) or components (used by system filters)
+                // Load all planet filters
                 PlanetFilter newFilter = new PlanetFilter(planetFilterSetting);
                 planetFilterMap.put(filterId, newFilter);
             }
@@ -117,15 +117,15 @@ public class SEEDReport {
     public String run() {
         centerOfMass = CommodityMarketData.computeCenterOfMass(null, null);
         
-        // Phase 1: Run all planet filters (no dependencies)
+        // Run all planet filters
         Map<String, Map<StarSystemAPI, Set<PlanetAPI>>> planetFilterResults = new HashMap<>();
         for (String filterId : planetFilterMap.keySet()) {
             PlanetFilter planetFilter = planetFilterMap.get(filterId);
             planetFilterResults.put(filterId, planetFilter.run());
         }
 
-        // Phase 2: Run all star system filters (can use planet filter results and other system filter results)
-        // Note: Filters are executed in order, so later filters can reference earlier ones via nearSystemFilters
+        // Run all star system filters (can use planet filter results and other system filter results)
+        // Filters are executed in order, so later filters can reference earlier ones via nearSystemFilters
         Map<String, Set<StarSystemAPI>> starSystemListMap = new HashMap<>();
         for (String filterId : starSystemFilterMap.keySet()) {
             StarSystemFilter systemFilter = starSystemFilterMap.get(filterId);
