@@ -70,16 +70,52 @@ public class SEEDReport {
 
         JSONObject starSystemFilterList = modSettings.optJSONObject("starSystemFilters");
         if (starSystemFilterList != null) {
-            starSystemFilterMap = new HashMap<>();
-            for (Iterator<String> iter = starSystemFilterList.keys(); iter.hasNext(); ) {
-                String filterId = iter.next();
+            starSystemFilterMap = new LinkedHashMap<>();
 
-                JSONObject starSystemFilterSetting = starSystemFilterList.optJSONObject(filterId);
-                if (starSystemFilterSetting == null) continue;
+            // Check if execution order is specified
+            JSONArray executionOrder = modSettings.optJSONArray("starSystemFilterExecutionOrder");
 
-                if (starSystemFilterSetting.optBoolean("isEnabled", true)) {
-                    StarSystemFilter newFilter = new StarSystemFilter(starSystemFilterSetting);
-                    starSystemFilterMap.put(filterId, newFilter);
+            if (executionOrder != null) {
+                // Load filters in the specified order
+                for (int i = 0; i < executionOrder.length(); i++) {
+                    String filterId = executionOrder.optString(i);
+
+                    if (starSystemFilterList.has(filterId)) {
+                        JSONObject starSystemFilterSetting = starSystemFilterList.optJSONObject(filterId);
+                        if (starSystemFilterSetting == null) continue;
+
+                        if (starSystemFilterSetting.optBoolean("isEnabled", true)) {
+                            StarSystemFilter newFilter = new StarSystemFilter(starSystemFilterSetting);
+                            starSystemFilterMap.put(filterId, newFilter);
+                        }
+                    } else {
+                        Global.getLogger(SEEDReport.class).warn("Filter '" + filterId + "' in execution order not found in starSystemFilters");
+                    }
+                }
+
+                // Warn about filters defined but not in execution order
+                for (Iterator<String> iter = starSystemFilterList.keys(); iter.hasNext(); ) {
+                    String filterId = iter.next();
+                    if (!starSystemFilterMap.containsKey(filterId)) {
+                        JSONObject filterSettings = starSystemFilterList.optJSONObject(filterId);
+                        if (filterSettings != null && filterSettings.optBoolean("isEnabled", true)) {
+                            Global.getLogger(SEEDReport.class).warn("Enabled filter '" + filterId + "' not in execution order - will not run");
+                        }
+                    }
+                }
+            } else {
+                // Fallback to unordered iteration
+                Global.getLogger(SEEDReport.class).warn("No starSystemFilterExecutionOrder specified - using unpredictable order from JSONObject.keys()");
+                for (Iterator<String> iter = starSystemFilterList.keys(); iter.hasNext(); ) {
+                    String filterId = iter.next();
+
+                    JSONObject starSystemFilterSetting = starSystemFilterList.optJSONObject(filterId);
+                    if (starSystemFilterSetting == null) continue;
+
+                    if (starSystemFilterSetting.optBoolean("isEnabled", true)) {
+                        StarSystemFilter newFilter = new StarSystemFilter(starSystemFilterSetting);
+                        starSystemFilterMap.put(filterId, newFilter);
+                    }
                 }
             }
         }
@@ -227,17 +263,48 @@ public class SEEDReport {
                         }
                     }
                 }
-                
+
+                // Show required proximity features
+                if (systemFilter.nearSystemFiltersRequired != null && !systemFilter.nearSystemFiltersRequired.isEmpty()) {
+                    for (String systemFilterId : systemFilter.nearSystemFiltersRequired.keySet()) {
+                        float maxDistance = systemFilter.nearSystemFiltersRequired.get(systemFilterId);
+
+                        if (starSystemListMap.containsKey(systemFilterId)) {
+                            if (maxDistance <= 0f) {
+                                // System IS in the filter
+                                StarSystemFilter requiredFilter = starSystemFilterMap.get(systemFilterId);
+                                print.append(String.format("  Matches '%s'\n", requiredFilter.filterName));
+                            } else {
+                                // Find nearest system for display
+                                StarSystemAPI nearestSystem = null;
+                                float nearestDistance = Float.MAX_VALUE;
+                                for (StarSystemAPI filterSystem : starSystemListMap.get(systemFilterId)) {
+                                    float distance = Misc.getDistanceLY(filterSystem.getLocation(), system.getLocation());
+                                    if (distance <= maxDistance && distance < nearestDistance) {
+                                        nearestSystem = filterSystem;
+                                        nearestDistance = distance;
+                                    }
+                                }
+                                if (nearestSystem != null) {
+                                    StarSystemFilter requiredFilter = starSystemFilterMap.get(systemFilterId);
+                                    print.append(String.format("  Within %.1f LY of '%s' (%s)\n",
+                                        nearestDistance, requiredFilter.filterName, nearestSystem.getName()));
+                                }
+                            }
+                        }
+                    }
+                }
+
                 // Show optional proximity features
                 if (systemFilter.nearSystemFiltersOptional != null && !systemFilter.nearSystemFiltersOptional.isEmpty()) {
                     for (String systemFilterId : systemFilter.nearSystemFiltersOptional.keySet()) {
                         float maxDistance = systemFilter.nearSystemFiltersOptional.get(systemFilterId);
-                        
+
                         if (starSystemListMap.containsKey(systemFilterId)) {
                             boolean isNear = false;
                             StarSystemAPI nearestSystem = null;
                             float nearestDistance = Float.MAX_VALUE;
-                            
+
                             if (maxDistance <= 0f) {
                                 // Check if system IS in the filter
                                 if (starSystemListMap.get(systemFilterId).contains(system)) {
@@ -254,7 +321,7 @@ public class SEEDReport {
                                     }
                                 }
                             }
-                            
+
                             if (isNear) {
                                 StarSystemFilter optionalFilter = starSystemFilterMap.get(systemFilterId);
                                 if (maxDistance <= 0f) {

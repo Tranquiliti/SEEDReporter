@@ -6,24 +6,27 @@
 	# If true, a SEED Report will be executed upon starting a new game
 	"runSEEDReportOnGameStart": true,
 
-	# ============================================================================
-	# IMPORTANT: Star System Filter Execution Order
-	# ============================================================================
-	# Star system filters are executed in the order they appear in this file.
-	# If filterB references filterA via nearSystemFiltersRequired or
-	# nearSystemFiltersOptional, then filterA MUST be defined BEFORE filterB.
-	#
-	# Recommended order:
-	#   1. Base filters (gate, hypershunt, cryosleeper, etc.)
-	#   2. Compound filters that reference base filters
-	#   3. Complex filters that reference compound filters
-	#
-	# Example:
-	#   "hypershunt": {...},                    // Define first
-	#   "nearHypershunt": {                     // Can reference "hypershunt"
-	#     "nearSystemFiltersRequired": [["hypershunt", 10.0]]
-	#   }
-	# ============================================================================
+	# Star System Filter Execution Order
+	# Filters are executed in the order specified here.
+	# Filters with nearSystemFiltersRequired must appear after the filters they reference
+	"starSystemFilterExecutionOrder": [
+		"sentinel",
+		"namelessRock",
+		"domainCryosleeper",
+		"domainMothership",
+		"remnantStation",
+		"hypershunt",
+		"gate",
+		"sotf_MiasStar",
+		"barrenGateSystem",
+		"gasGiantGateSystem",
+		"rareOneSystemBuild",
+		"orbitalSolarArraySystem",
+		"miningBoreSystem",
+		"soilNanitesSystem",
+		"multiHabitableSystem",
+		"basicOneSystemBuild"
+	],
 
 	"starSystemFilters": {
 		"example": {
@@ -258,6 +261,32 @@
 				["domainCryosleeper", 10.0]
 			]
 		},
+		"rareOneSystemBuild": {
+			"filterName": "Rare one-system colony build",
+			"saveShorthand": "1SYS+",
+			"isEnabled": true,
+			"distanceFromCOM": 25,
+			"avoidTags": [
+				"theme_hidden",
+				"theme_core",
+				"theme_abyssal"
+			],
+			"hasPlanetsRequired": [
+				"habitablePlanet",
+				"farmingPlanet",
+				"noAtmospherePlanet",
+				"planetWithOres",
+				"planetWithOrganics",
+				"gasGiantAny"
+			],
+			"nearSystemFiltersRequired": [
+				"gate"
+			],
+			"nearSystemFiltersOptional": [
+				["hypershunt", 10.0],
+				["domainCryosleeper", 10.0]
+			]
+		},
 		"multiHabitableSystem": {
 			"filterName": "System with 3+ habitable planets",
 			"saveShorthand": "3HAB",
@@ -295,7 +324,7 @@
 	# All planet filters are component filters - they are not run standalone but used by system filters
 	"planetFilters": {
 		"example": {
-			# Name of the filter, which will be displayed on the report if saveShorthand is specified
+			# Name of the filter, this is what is displayed when a system report has a planet matching the filter
 			"filterName": "Example planet filter",
 
 			# Only planets with at most this hazard value will match (0-400, where 100 = 100% hazard)
