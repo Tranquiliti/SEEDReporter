@@ -15,7 +15,7 @@
 		"domainCryosleeper",
 		"domainMothership",
 		"remnantStation",
-		"hypershunt",
+		"coronalHypershunt",
 		"gate",
 		"sotf_MiasStar",
 		"barrenGateSystem",
@@ -70,16 +70,16 @@
 			# Examples:
 			#   ["gate"]                           - Must have a gate
 			#   [["domainCryosleeper", 5.0]]       - Within 5 LY of a cryosleeper
-			#   ["gate", ["hypershunt", 10.0]]     - Must have a gate AND be within 10 LY of hypershunt
+			#   ["gate", ["coronalHypershunt", 10.0]]     - Must have a gate AND be within 10 LY of hypershunt
 			"nearSystemFiltersRequired": [
 				"gate",
 				["domainCryosleeper", 10.0],
-				["hypershunt", 10.0]
+				["coronalHypershunt", 10.0]
 			],
 
 			# Optional proximity - nice to have, shown in output with + prefix
 			"nearSystemFiltersOptional": [
-				["hypershunt", 5.0]
+				["coronalHypershunt", 5.0]
 			],
 
 			# If specified, only systems that contain all of these planets will match
@@ -135,9 +135,12 @@
 			"hasTags": [
 				"theme_remnant_main",
 				"theme_remnant_resurgent"
+			],
+			"nearSystemFiltersOptional": [
+				"gate"
 			]
 		},
-		"hypershunt": {
+		"coronalHypershunt": {
 			"filterName": "Coronal Hypershunt locations",
 			"isEnabled": true,
 			"hasTags": [
@@ -158,7 +161,7 @@
 		},
 		"sotf_MiasStar": {
 			"filterName": "Mia's Star with Inactive Gate (from the Secrets of the Frontier mod)",
-			"saveShorthand": "*",
+			"saveShorthand": "MIA*",
 			"isEnabled": false,
 			"systemId": "sotf_mia",
 			"hasEntityWithTags": [
@@ -257,7 +260,7 @@
 			],
 			"nearSystemFiltersOptional": [
 				"gate",
-				["hypershunt", 10.0],
+				["coronalHypershunt", 10.0],
 				["domainCryosleeper", 10.0]
 			]
 		},
@@ -283,7 +286,7 @@
 				"gate"
 			],
 			"nearSystemFiltersOptional": [
-				["hypershunt", 10.0],
+				["coronalHypershunt", 10.0],
 				["domainCryosleeper", 10.0]
 			]
 		},
@@ -309,7 +312,7 @@
 			],
 			"nearSystemFiltersOptional": [
 				"gate",
-				["hypershunt", 10.0],
+				["coronalHypershunt", 10.0],
 				["domainCryosleeper", 10.0]
 			]
 		},
@@ -317,7 +320,7 @@
 
 	# Which star system filter (from "starSystemFilters") to use when searching
 	# for Tesseract locations and variants
-	"tesseractStarSystemFilter": "hypershunt",
+	"tesseractStarSystemFilter": "coronalHypershunt",
 
 	# Planet filter definitions
 	# Planet filters define reusable planet search criteria that can be referenced by star system filters
@@ -331,7 +334,7 @@
 			"maxHazardValue": 175,
 
 			# Only these planet types will match
-			# Defining this speeds up searches by skipping planets that can't have desired conditions
+			# Defining this speeds up searches by skipping planets that cannot host the desired conditions
 			"matchesPlanetTypes": [
 				"gas_giant",
 				"ice_giant",

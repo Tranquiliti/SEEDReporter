@@ -337,7 +337,7 @@ public class SEEDReport {
             }
 
             if (systemFilter.saveShorthand != null && !starSystemListMap.get(filterId).isEmpty()) {
-                if (filterShorthand.length() > 0) filterShorthand.append(",");
+                if (!filterShorthand.isEmpty()) filterShorthand.append(",");
                 filterShorthand.append(systemFilter.saveShorthand);
             }
         }
