@@ -1,3 +1,13 @@
+Version 1.0.0
+
+* Revamped SEED Report with multi-planet system search feature (implemented by brobinett)
+  - Major changes to the "starSystemFilters" and "planetFilters" settings to allow searching for systems with multiple matching planets
+  - Added "starSystemFilterExecutionOrder" setting to avoid circular references with filter names
+  - Consult the updated seedreporterSettings.json to see the rest of the changes!
+* Fixed "maxHazardValue" option not properly taking the percentage value (fix by brobinett)
+
+
+
 Version 0.3.1
 
 * Fixed crash when a planet filter has no specified "avoidSystemTags"

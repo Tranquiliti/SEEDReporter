@@ -7,6 +7,7 @@ Requires the Console Commands mod to output the results in-game.
 
 # Credits
 <b>LazyWizard</b> - For the Console Commands mod!<br>
+<b>brobinett</b> - For implementing the multi-planet system search feature
 <b>Starsector Forums</b> - For the helpful modding tutorials and information<br>
 <b>Unofficial Starsector Discord</b> - For helpful modding information and tips<br>
 <b>Alex and the Fractal Softworks team</b> - For the amazing game that is Starsector!<br>
