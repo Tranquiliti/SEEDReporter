@@ -258,9 +258,11 @@ public class StarSystemFilter {
                 case "id":
                     if (memKeyValue == null || !memKeyValue.equals(entity.getId())) return false;
                     break;
-                case "wreckVariant": // Sadly, the plugin does not appear to show in Dev mode
-                    if (memKeyValue == null || !(entity.getCustomPlugin() instanceof DerelictShipEntityPlugin plugin) || !memKeyValue.equals(plugin.getData().ship.variantId))
+                case "wreckHullId": // The plugin does not show in Dev mode
+                    if (memKeyValue == null || !(entity.getCustomPlugin() instanceof DerelictShipEntityPlugin plugin))
                         return false;
+                    String hullId = (plugin.getData().ship.variantId != null ? Global.getSettings().getVariant(plugin.getData().ship.variantId) : plugin.getData().ship.variant).getHullSpec().getHullId();
+                    if (!memKeyValue.equals(hullId)) return false;
                     break;
                 default:
                     if (memKeyValue == null) { // Not using [id, value] format

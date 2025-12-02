@@ -12,5 +12,5 @@ Requires the Console Commands mod to output the results in-game.
 <b>Unofficial Starsector Discord</b> - For helpful modding information and tips<br>
 <b>Alex and the Fractal Softworks team</b> - For the amazing game that is Starsector!<br>
 
-# Modding Notes
+# Modding notes
 This mod is licensed under <b>CC0 1.0</b>. Feel free to take or use anything here for your own use.

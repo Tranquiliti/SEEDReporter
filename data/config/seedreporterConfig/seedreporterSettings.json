@@ -20,16 +20,22 @@
 		"gate",
 		"researchStations",
 		"wreckLegionXIV",
-		"sotf_MiasStar",
 		"barrenGateSystem",
 		"gasGiantGateSystem",
+		"basicOneSystemBuild",
 		"rareOneSystemBuild",
 		"orbitalSolarArraySystem",
 		"miningBoreSystem",
 		"soilNanitesSystem",
 		"multiHabitableSystem",
-		"basicOneSystemBuild"
+		"sotf_miasStar",
+		"US_uniquePlanetSystems",
+		"SWP_excelsior"
 	],
+
+	# Which star system filter from "starSystemFilters" to use when searching
+	# for Tesseract locations and variants
+	"tesseractStarSystemFilter": "coronalHypershunt",
 
 	"starSystemFilters": {
 		"example": {
@@ -57,8 +63,8 @@
 			],
 
 			# If specified, only search for systems that contain an entity with all specified memory keys, tags, or characteristics
-		    # Entity tags must start with "$tag:" (e.g., "$tag:gate")
-		    # Also supports searching for "id", "name", "fullName", "customType", and "wreckVariant" (these MUST use the [id, value] format)
+		    # Entity tags must start with "$tag:" (e.g., "$tag:gate" or "$tag:neutrino_high")
+		    # Also supports searching for "id", "name", "fullName", "customType", and "wreckHullId" (these MUST use the [id, value] format)
 			"hasEntityWithMemoryKeys": [
 				"$damagedStation", # Memory key exists in entity
 				"$tag:station", # Has "station" tag
@@ -68,7 +74,7 @@
 				["name", "Nexus"], # Has exact name
 				["fullName", "Remnant Nexus"], # Has exact full name
 				["customType", "research_station_remnant"], # Entity type is the same custom type
-				["wreckVariant", "revenant_Elite"] # Entity is a derelict ship of specified ship variant
+				["wreckHullId", "revenant_Elite"] # Entity is a derelict ship of specified ship variant
 			],
 
 			# If specified, only systems within this distance (LY) from the market center of mass will match
@@ -117,33 +123,33 @@
 			]
 		},
 		"sentinel": {
-			"filterName": "Sentinel location",
+			"filterName": "Sentinel",
 			"isEnabled": true,
 			"hasTags": [
 				"pk_system"
 			]
 		},
 		"namelessRock": {
-			"filterName": "Nameless Rock location",
+			"filterName": "Nameless Rock",
 			"isEnabled": true,
 			"systemId": "nameless_rock_location"
 		},
 		"domainCryosleeper": {
-			"filterName": "Domain-era Cryosleeper locations",
+			"filterName": "Domain-era Cryosleeper",
 			"isEnabled": true,
 			"hasTags": [
 				"theme_derelict_cryosleeper"
 			],
 		},
 		"domainMothership": {
-			"filterName": "Domain-era Mothership locations",
+			"filterName": "Domain-era Mothership",
 			"isEnabled": true,
 			"hasTags": [
 				"theme_derelict_mothership"
 			]
 		},
 		"remnantStation": {
-			"filterName": "Fully-operational Remnant station locations",
+			"filterName": "Fully-operational Remnant station",
 			"isEnabled": true,
 			"hasTags": [
 				"theme_remnant_main",
@@ -154,7 +160,7 @@
 			]
 		},
 		"damagedRemnantStation": {
-			"filterName": "Damaged Remnant station locations",
+			"filterName": "Damaged Remnant station",
 			"isEnabled": false,
 			"hasTags": [
 				"theme_remnant_main",
@@ -168,7 +174,7 @@
 			]
 		},
 		"researchStations": {
-			"filterName": "Research station locations",
+			"filterName": "Research station",
 			"isEnabled": false,
 			"avoidTags": [
 				"theme_hidden",
@@ -181,39 +187,31 @@
 			]
 		},
 		"wreckLegionXIV": {
-			"filterName": "Legion (XIV) wreck locations",
+			"filterName": "Legion (XIV) wreck",
 			"isEnabled": true,
 			"hasTags": [
 				"theme_remnant"
 			],
 			"hasEntityWithMemoryKeys": [
-				["wreckVariant", "legion_xiv_Elite"]
+				["wreckHullId", "legion_xiv"]
 			]
 		},
 		"coronalHypershunt": {
-			"filterName": "Coronal Hypershunt locations",
+			"filterName": "Coronal Hypershunt",
 			"isEnabled": true,
 			"hasTags": [
 				"has_coronal_tap"
-			]
+			],
+			#"hasEntityWithMemoryKeys": ["$tag:coronal_tap"]
 		},
 		"gate": {
-			"filterName": "Inactive Gate locations",
+			"filterName": "Inactive Gate",
 			"isEnabled": true,
 			"avoidTags": [
 				"theme_hidden",
 				"theme_core",
 				"theme_abyssal"
 			],
-			"hasEntityWithMemoryKeys": [
-				"$tag:gate"
-			]
-		},
-		"sotf_MiasStar": {
-			"filterName": "Mia's Star with Inactive Gate (from the Secrets of the Frontier mod)",
-			"saveShorthand": "MIA*",
-			"isEnabled": false,
-			"systemId": "sotf_mia",
 			"hasEntityWithMemoryKeys": [
 				"$tag:gate"
 			]
@@ -316,26 +314,10 @@
 			"filterName": "Rare one-system colony build",
 			"saveShorthand": "1SYS+",
 			"isEnabled": true,
-			"distanceFromCOM": 25,
-			"avoidTags": [
-				"theme_hidden",
-				"theme_core",
-				"theme_abyssal"
-			],
-			"hasPlanetsRequired": [
-				"habitablePlanet",
-				"farmingPlanet",
-				"noAtmospherePlanet",
-				"planetWithOres",
-				"planetWithOrganics",
-				"gasGiantAny"
-			],
+			#"numStableLocations": 3,
 			"nearSystemFiltersRequired": [
+				"basicOneSystemBuild",
 				"gate"
-			],
-			"nearSystemFiltersOptional": [
-				["coronalHypershunt", 10.0],
-				["domainCryosleeper", 10.0]
 			]
 		},
 		"multiHabitableSystem": {
@@ -364,11 +346,51 @@
 				["domainCryosleeper", 10.0]
 			]
 		},
+		"sotf_miasStar": {
+			"filterName": "Secrets of the Frontier - Mia's Star with Inactive Gate",
+			"saveShorthand": "MIA*",
+			"isEnabled": false,
+			"systemId": "sotf_mia",
+			"hasEntityWithMemoryKeys": [
+				"$tag:gate"
+			]
+		},
+		"US_uniquePlanetSystems": {
+			"filterName": "Unknown Skies - Systems with unique US planets",
+			#"saveShorthand": "US",
+			"isEnabled": false,
+			"avoidTags": [
+				"theme_hidden",
+				"theme_abyssal"
+			],
+			"hasPlanetsOneOf": [
+				"US_sakura",
+				"US_unique"
+			]
+		},
+		"SWP_excelsior": {
+			"filterName": "Ship/Weapon Pack - Excelsior wreck",
+			"isEnabled": false,
+			"avoidTags": [
+				"theme_hidden",
+				"theme_remnant_resurgent",
+				"theme_core",
+				"system_already_used_for_story",
+				"ix_fortified",
+				"theme_breakers",
+				"theme_breakers_main",
+				"theme_breakers_secondary",
+				"theme_breakers_no_fleets",
+				"theme_breakers_destroyed",
+				"theme_breakers_suppressed",
+				"theme_breakers_resurgent"
+			],
+			"hasEntityWithMemoryKeys": [
+				#["fullName", "Drifting Ship"],
+				["wreckHullId", "swp_excelsior"]
+			]
+		}
 	},
-
-	# Which star system filter (from "starSystemFilters") to use when searching
-	# for Tesseract locations and variants
-	"tesseractStarSystemFilter": "coronalHypershunt",
 
 	# Planet filter definitions
 	# Planet filters define reusable planet search criteria that can be referenced by star system filters
@@ -559,9 +581,18 @@
 			"matchesAtLeast": 1
 		},
 		"US_sakura": {
-			"filterName": "Sakura planet (from the Unknown Skies mod)",
+			"filterName": "Unknown Skies - Sakura planet",
 			"matchesPlanetTypes": [
 				"US_sakura"
+			]
+		},
+		"US_unique": {
+			"filterName": "Unknown Skies - Unique planet",
+			"matchesPlanetTypes": [
+				"US_artificial",
+				"US_magnetic",
+				"US_storm",
+				"US_fluorescent"
 			]
 		}
 	},

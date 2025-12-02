@@ -9,6 +9,11 @@ Version 1.0.0
   - Now also allows searching for entities with specified memory keys, IDs, names, etc.
   - Tags can still be searched by appending "$tag:" to the desired tag (e.g., "$tag:gate" instead of "gate")
 * Fixed "maxHazardValue" option not properly taking the percentage value (fix by brobinett)
+* Added error handling for SEED reports from "runSEEDReportOnGameStart" to avoid game crashes resulting from errors in the SEED report
+* Added error handling when generating the defenders for the Tesseract search
+* Star system filters with "saveShorthand" now also display their shorthand in the SEED report
+* Added more star system filters to "seedreporterSettings.json"
+  - Also includes filters for finding certain modded content; these are disabled by default
 * Renamed default "hypershunt" filter to "coronalHypershunt"
 
 
