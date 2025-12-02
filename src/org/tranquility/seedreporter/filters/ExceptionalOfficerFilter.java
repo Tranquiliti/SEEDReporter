@@ -90,10 +90,10 @@ public class ExceptionalOfficerFilter {
         Set<SectorEntityToken> salvage = new HashSet<>();
         for (StarSystemAPI system : Global.getSector().getStarSystems()) {
             for (SectorEntityToken entity : system.getAllEntities()) {
-                Object o = entity.getMemoryWithoutUpdate().get(MemFlags.SALVAGE_SPECIAL_DATA);
-                if (!(o instanceof SleeperPodsSpecial.SleeperPodsSpecialData)) continue;
+                if (!(entity.getMemoryWithoutUpdate().get(MemFlags.SALVAGE_SPECIAL_DATA) instanceof SleeperPodsSpecial.SleeperPodsSpecialData data))
+                    continue;
 
-                PersonAPI officer = ((SleeperPodsSpecial.SleeperPodsSpecialData) o).officer;
+                PersonAPI officer = data.officer;
                 if (officer != null && officer.getMemoryWithoutUpdate().getBoolean(MemFlags.EXCEPTIONAL_SLEEPER_POD_OFFICER))
                     salvage.add(entity);
             }

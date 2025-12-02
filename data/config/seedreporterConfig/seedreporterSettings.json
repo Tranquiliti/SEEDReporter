@@ -6,17 +6,20 @@
 	# If true, a SEED Report will be executed upon starting a new game
 	"runSEEDReportOnGameStart": true,
 
-	# Star System Filter Execution Order
-	# Filters are executed in the order specified here.
-	# Filters with nearSystemFiltersRequired must appear after the filters they reference
+	# Specifies order in which star system filters are executed
+	# Any filters in "starSystemFilters" MUST be placed here to appear in the SEED report
+	# Filters with "nearSystemFiltersRequired" must appear after the filters they reference
 	"starSystemFilterExecutionOrder": [
 		"sentinel",
 		"namelessRock",
 		"domainCryosleeper",
 		"domainMothership",
 		"remnantStation",
+		"damagedRemnantStation",
 		"coronalHypershunt",
 		"gate",
+		"researchStations",
+		"wreckLegionXIV",
 		"sotf_MiasStar",
 		"barrenGateSystem",
 		"gasGiantGateSystem",
@@ -53,9 +56,19 @@
 				"theme_core"
 			],
 
-			# If specified, only search for systems that contain an entity with all specified tags
-			"hasEntityWithTags": [
-				"station"
+			# If specified, only search for systems that contain an entity with all specified memory keys, tags, or characteristics
+		    # Entity tags must start with "$tag:" (e.g., "$tag:gate")
+		    # Also supports searching for "id", "name", "fullName", "customType", and "wreckVariant" (these MUST use the [id, value] format)
+			"hasEntityWithMemoryKeys": [
+				"$damagedStation", # Memory key exists in entity
+				"$tag:station", # Has "station" tag
+				["$objectiveNonFunctional", true], # Has boolean memory key
+				["$fleetType", "battlestation"], # Has String memory key
+				["id", "corvus_abandoned_station"], # Entity has the same ID
+				["name", "Nexus"], # Has exact name
+				["fullName", "Remnant Nexus"], # Has exact full name
+				["customType", "research_station_remnant"], # Entity type is the same custom type
+				["wreckVariant", "revenant_Elite"] # Entity is a derelict ship of specified ship variant
 			],
 
 			# If specified, only systems within this distance (LY) from the market center of mass will match
@@ -140,6 +153,43 @@
 				"gate"
 			]
 		},
+		"damagedRemnantStation": {
+			"filterName": "Damaged Remnant station locations",
+			"isEnabled": false,
+			"hasTags": [
+				"theme_remnant_main",
+				"theme_remnant_suppressed"
+			],
+			"hasEntityWithMemoryKeys": [
+				"$damagedStation"
+			],
+			"nearSystemFiltersOptional": [
+				"gate"
+			]
+		},
+		"researchStations": {
+			"filterName": "Research station locations",
+			"isEnabled": false,
+			"avoidTags": [
+				"theme_hidden",
+				"theme_core",
+				"theme_abyssal"
+			],
+			"hasEntityWithMemoryKeys": [
+				["fullName", "Research Station"],
+				"$tag:salvageable"
+			]
+		},
+		"wreckLegionXIV": {
+			"filterName": "Legion (XIV) wreck locations",
+			"isEnabled": true,
+			"hasTags": [
+				"theme_remnant"
+			],
+			"hasEntityWithMemoryKeys": [
+				["wreckVariant", "legion_xiv_Elite"]
+			]
+		},
 		"coronalHypershunt": {
 			"filterName": "Coronal Hypershunt locations",
 			"isEnabled": true,
@@ -155,30 +205,30 @@
 				"theme_core",
 				"theme_abyssal"
 			],
-			"hasEntityWithTags": [
-				"gate"
-			],
+			"hasEntityWithMemoryKeys": [
+				"$tag:gate"
+			]
 		},
 		"sotf_MiasStar": {
 			"filterName": "Mia's Star with Inactive Gate (from the Secrets of the Frontier mod)",
 			"saveShorthand": "MIA*",
 			"isEnabled": false,
 			"systemId": "sotf_mia",
-			"hasEntityWithTags": [
-				"gate"
-			],
+			"hasEntityWithMemoryKeys": [
+				"$tag:gate"
+			]
 		},
 		"barrenGateSystem": {
 			"filterName": "System with gate and Barren planet (20 LY)",
-			"isEnabled": true,
+			"isEnabled": false,
 			"distanceFromCOM": 20,
 			"avoidTags": [
 				"theme_hidden",
 				"theme_core",
 				"theme_abyssal"
 			],
-			"hasEntityWithTags": [
-				"gate"
+			"hasEntityWithMemoryKeys": [
+				"$tag:gate"
 			],
 			"hasPlanetsRequired": [
 				"barrenLowHazard"
@@ -187,15 +237,15 @@
 		"gasGiantGateSystem": {
 			"filterName": "System with gate and Gas Giant (Plentiful Volatiles, 20 LY)",
 			"saveShorthand": "G",
-			"isEnabled": true,
+			"isEnabled": false,
 			"distanceFromCOM": 20,
 			"avoidTags": [
 				"theme_hidden",
 				"theme_core",
 				"theme_abyssal"
 			],
-			"hasEntityWithTags": [
-				"gate"
+			"hasEntityWithMemoryKeys": [
+				"$tag:gate"
 			],
 			"hasPlanetsRequired": [
 				"gasGiantPlentifulVolatiles"
@@ -203,7 +253,6 @@
 		},
 		"orbitalSolarArraySystem": {
 			"filterName": "Orbital Solar Array planets",
-			"saveShorthand": "S",
 			"isEnabled": true,
 			"avoidTags": [
 				"theme_hidden",
@@ -229,8 +278,7 @@
 		},
 		"soilNanitesSystem": {
 			"filterName": "Soil Nanites and Fullerene Spool on non-decivilized world",
-			"saveShorthand": "N",
-			"isEnabled": true,
+			"isEnabled": false,
 			"avoidTags": [
 				"theme_hidden",
 				"theme_core",
@@ -242,7 +290,7 @@
 		},
 		"basicOneSystemBuild": {
 			"filterName": "Basic one-system colony build",
-			"saveShorthand": "1SYS",
+			#"saveShorthand": "1SYS",
 			"isEnabled": true,
 			"distanceFromCOM": 25,
 			"avoidTags": [

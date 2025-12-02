@@ -152,7 +152,7 @@ public class SEEDReport {
      */
     public String run() {
         centerOfMass = CommodityMarketData.computeCenterOfMass(null, null);
-        
+
         // Run all planet filters
         Map<String, Map<StarSystemAPI, Set<PlanetAPI>>> planetFilterResults = new HashMap<>();
         for (String filterId : planetFilterMap.keySet()) {
@@ -183,24 +183,21 @@ public class SEEDReport {
 
             for (StarSystemAPI system : starSystemListMap.get(filterId)) {
                 print.append(String.format("%s - %s\n", getHyperspaceCoordinates(system), system.getName()));
-                
+
                 // If this filter specifies planet requirements, show which planets matched
-                if ((systemFilter.hasPlanetsRequired != null && !systemFilter.hasPlanetsRequired.isEmpty()) ||
-                    (systemFilter.hasPlanetsOneOf != null && !systemFilter.hasPlanetsOneOf.isEmpty()) ||
-                    (systemFilter.hasPlanetsOptional != null && !systemFilter.hasPlanetsOptional.isEmpty())) {
-                    
+                if ((systemFilter.hasPlanetsRequired != null && !systemFilter.hasPlanetsRequired.isEmpty()) || (systemFilter.hasPlanetsOneOf != null && !systemFilter.hasPlanetsOneOf.isEmpty()) || (systemFilter.hasPlanetsOptional != null && !systemFilter.hasPlanetsOptional.isEmpty())) {
+
                     Set<PlanetAPI> requiredPlanets = new HashSet<>();
                     Set<PlanetAPI> oneOfPlanets = new HashSet<>();
                     Set<PlanetAPI> optionalPlanets = new HashSet<>();
-                    
+
                     // Map planets to their matching filter names
                     Map<PlanetAPI, Set<String>> planetToFilterNames = new HashMap<>();
-                    
+
                     // Collect required planets and their filter names
                     if (systemFilter.hasPlanetsRequired != null) {
                         for (String planetFilterId : systemFilter.hasPlanetsRequired.keySet()) {
-                            if (planetFilterResults.containsKey(planetFilterId) && 
-                                planetFilterResults.get(planetFilterId).containsKey(system)) {
+                            if (planetFilterResults.containsKey(planetFilterId) && planetFilterResults.get(planetFilterId).containsKey(system)) {
                                 PlanetFilter filter = planetFilterMap.get(planetFilterId);
                                 for (PlanetAPI planet : planetFilterResults.get(planetFilterId).get(system)) {
                                     requiredPlanets.add(planet);
@@ -209,12 +206,11 @@ public class SEEDReport {
                             }
                         }
                     }
-                    
+
                     // Collect oneOf planets and their filter names
                     if (systemFilter.hasPlanetsOneOf != null) {
                         for (String planetFilterId : systemFilter.hasPlanetsOneOf) {
-                            if (planetFilterResults.containsKey(planetFilterId) && 
-                                planetFilterResults.get(planetFilterId).containsKey(system)) {
+                            if (planetFilterResults.containsKey(planetFilterId) && planetFilterResults.get(planetFilterId).containsKey(system)) {
                                 PlanetFilter filter = planetFilterMap.get(planetFilterId);
                                 for (PlanetAPI planet : planetFilterResults.get(planetFilterId).get(system)) {
                                     oneOfPlanets.add(planet);
@@ -223,12 +219,11 @@ public class SEEDReport {
                             }
                         }
                     }
-                    
+
                     // Collect optional planets and their filter names
                     if (systemFilter.hasPlanetsOptional != null) {
                         for (String planetFilterId : systemFilter.hasPlanetsOptional) {
-                            if (planetFilterResults.containsKey(planetFilterId) && 
-                                planetFilterResults.get(planetFilterId).containsKey(system)) {
+                            if (planetFilterResults.containsKey(planetFilterId) && planetFilterResults.get(planetFilterId).containsKey(system)) {
                                 PlanetFilter filter = planetFilterMap.get(planetFilterId);
                                 for (PlanetAPI planet : planetFilterResults.get(planetFilterId).get(system)) {
                                     optionalPlanets.add(planet);
@@ -237,7 +232,7 @@ public class SEEDReport {
                             }
                         }
                     }
-                    
+
                     // Print required and oneOf planets (no prefix)
                     Set<PlanetAPI> allMatchingPlanets = new HashSet<>();
                     allMatchingPlanets.addAll(requiredPlanets);
@@ -245,21 +240,15 @@ public class SEEDReport {
                     for (PlanetAPI planet : allMatchingPlanets) {
                         Set<String> filterNames = planetToFilterNames.get(planet);
                         String filterNameStr = filterNames != null ? String.join(", ", filterNames) : "";
-                        print.append(String.format("  %.0f%%, %s (%s)\n", 
-                            planet.getMarket().getHazardValue() * 100f, 
-                            planet.getName(),
-                            filterNameStr));
+                        print.append(String.format("  %.0f%%, %s (%s)\n", planet.getMarket().getHazardValue() * 100f, planet.getName(), filterNameStr));
                     }
-                    
+
                     // Print optional planets (with + prefix)
                     for (PlanetAPI planet : optionalPlanets) {
                         if (!allMatchingPlanets.contains(planet)) {  // Don't duplicate if already shown
                             Set<String> filterNames = planetToFilterNames.get(planet);
                             String filterNameStr = filterNames != null ? String.join(", ", filterNames) : "";
-                            print.append(String.format("  + %.0f%%, %s (%s)\n", 
-                                planet.getMarket().getHazardValue() * 100f, 
-                                planet.getName(),
-                                filterNameStr));
+                            print.append(String.format("  + %.0f%%, %s (%s)\n", planet.getMarket().getHazardValue() * 100f, planet.getName(), filterNameStr));
                         }
                     }
                 }
@@ -287,8 +276,7 @@ public class SEEDReport {
                                 }
                                 if (nearestSystem != null) {
                                     StarSystemFilter requiredFilter = starSystemFilterMap.get(systemFilterId);
-                                    print.append(String.format("  Within %.1f LY of '%s' (%s)\n",
-                                        nearestDistance, requiredFilter.filterName, nearestSystem.getName()));
+                                    print.append(String.format("  Within %.1f LY of '%s' (%s)\n", nearestDistance, requiredFilter.filterName, nearestSystem.getName()));
                                 }
                             }
                         }
@@ -327,8 +315,7 @@ public class SEEDReport {
                                 if (maxDistance <= 0f) {
                                     print.append(String.format("  + Matches '%s'\n", optionalFilter.filterName));
                                 } else {
-                                    print.append(String.format("  + Within %.1f LY of '%s' (%s)\n", 
-                                        nearestDistance, optionalFilter.filterName, nearestSystem.getName()));
+                                    print.append(String.format("  + Within %.1f LY of '%s' (%s)\n", nearestDistance, optionalFilter.filterName, nearestSystem.getName()));
                                 }
                             }
                         }
@@ -350,7 +337,7 @@ public class SEEDReport {
             Object o = entity.getMemoryWithoutUpdate().get(MemFlags.SALVAGE_SPECIAL_DATA);
             PersonAPI officer = ((SleeperPodsSpecial.SleeperPodsSpecialData) o).officer;
 
-            print.append(String.format("%s - %s within %s (%s)\n * ", getHyperspaceCoordinates(entity.getContainingLocation()), officer.getName().getFullName(), entity.getFullName(), entity.getContainingLocation().getName()));
+            print.append(String.format("%s - %s in %s (%s)\n  ", getHyperspaceCoordinates(entity.getContainingLocation()), officer.getName().getFullName(), entity.getFullName(), entity.getContainingLocation().getName()));
 
             for (SkillLevelAPI skill : officer.getStats().getSkillsCopy())
                 if (skill.getSkill().isCombatOfficerSkill()) {
@@ -389,7 +376,7 @@ public class SEEDReport {
                         ShipVariantAPI variant = member.getVariant();
                         String variantId = variant.getHullVariantId();
                         variants.add(variantId);
-                        print.append(String.format(" * %s (%s)\n", variant.getDisplayName(), variantId));
+                        print.append(String.format("  %s (%s)\n", variant.getDisplayName(), variantId));
                         variantShorthand.append(variantId.charAt(variantId.indexOf("_") + 1)).append(variantId.charAt(variantId.length() - 1));
                     }
                 }

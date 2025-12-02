@@ -2,8 +2,12 @@ Version 1.0.0
 
 * Revamped SEED Report with multi-planet system search feature (implemented by brobinett)
   - Major changes to the "starSystemFilters" and "planetFilters" settings to allow searching for systems with multiple matching planets
+  - Report no longer directly prints the "planetFilters" results; instead, "starSystemFilters" can now use planet filters to further filter out star systems
   - Added "starSystemFilterExecutionOrder" setting to avoid circular references with filter names
   - Consult the updated seedreporterSettings.json for further information on the new format!
+* Replaced "hasEntityWithTags" with "hasEntityWithMemoryKeys"
+  - Now also allows searching for entities with specified memory keys, IDs, names, etc.
+  - Tags can still be searched by appending "$tag:" to the desired tag (e.g., "$tag:gate" instead of "gate")
 * Fixed "maxHazardValue" option not properly taking the percentage value (fix by brobinett)
 * Renamed default "hypershunt" filter to "coronalHypershunt"
 

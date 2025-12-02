@@ -4,17 +4,14 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.PlanetAPI;
 import com.fs.starfarer.api.campaign.SectorEntityToken;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
+import com.fs.starfarer.api.impl.campaign.DerelictShipEntityPlugin;
 import com.fs.starfarer.api.util.Misc;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.lwjgl.util.vector.Vector2f;
 import org.tranquility.seedreporter.SEEDUtils;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class StarSystemFilter {
     public String filterName;
@@ -22,7 +19,7 @@ public class StarSystemFilter {
     public String systemId;
     public Set<String> avoidTags;
     public Set<String> searchTags;
-    public Set<String> entityTags;
+    public Map<String, Object> entityMemoryKeys;
     public float distanceFromCOM;
     public int numStableLocations;
 
@@ -35,6 +32,8 @@ public class StarSystemFilter {
     public Map<String, Float> nearSystemFiltersRequired;  // System filter ID -> max distance in LY
     public Map<String, Float> nearSystemFiltersOptional;  // Nice to have
 
+    private static final String TAG_MEM_KEY = "$tag:";
+
     public StarSystemFilter(JSONObject settings) {
         filterName = settings.optString("filterName", "Star system filter locations");
         saveShorthand = settings.optString("saveShorthand", null);
@@ -42,7 +41,26 @@ public class StarSystemFilter {
 
         avoidTags = SEEDUtils.convertJSONArrayToSet(settings.optJSONArray("avoidTags"));
         searchTags = SEEDUtils.convertJSONArrayToSet(settings.optJSONArray("hasTags"));
-        entityTags = SEEDUtils.convertJSONArrayToSet(settings.optJSONArray("hasEntityWithTags"));
+
+        JSONArray entityMemoryKeysArray = settings.optJSONArray("hasEntityWithMemoryKeys");
+        if (entityMemoryKeysArray != null) {
+            entityMemoryKeys = new HashMap<>();
+            for (int i = 0; i < entityMemoryKeysArray.length(); i++) {
+                JSONArray pairArray = entityMemoryKeysArray.optJSONArray(i);
+                if (pairArray != null && pairArray.length() >= 2) {
+                    String memKeyId = pairArray.optString(0, null);
+                    Object memKeyValue = pairArray.opt(1);
+                    if (memKeyId != null) {
+                        entityMemoryKeys.put(memKeyId, memKeyValue);
+                    }
+                } else {
+                    String memKeyId = entityMemoryKeysArray.optString(i, null);
+                    if (memKeyId != null) {
+                        entityMemoryKeys.put(memKeyId, null);
+                    }
+                }
+            }
+        }
 
         distanceFromCOM = (float) settings.optDouble("distanceFromCOM", Float.MAX_VALUE);
         numStableLocations = settings.optInt("numStableLocations", 0);
@@ -109,9 +127,7 @@ public class StarSystemFilter {
         }
     }
 
-    public Set<StarSystemAPI> run(Vector2f centerOfMass, 
-                                   Map<String, Map<StarSystemAPI, Set<PlanetAPI>>> planetFilterResults,
-                                   Map<String, Set<StarSystemAPI>> starSystemListMap) {
+    public Set<StarSystemAPI> run(Vector2f centerOfMass, Map<String, Map<StarSystemAPI, Set<PlanetAPI>>> planetFilterResults, Map<String, Set<StarSystemAPI>> starSystemListMap) {
         Set<StarSystemAPI> foundSystems = new HashSet<>();
 
         Iterable<StarSystemAPI> systems;
@@ -133,11 +149,11 @@ public class StarSystemFilter {
             // Check system must have all specified tags
             if (searchTags != null && !system.getTags().containsAll(searchTags)) continue;
 
-            // Check system must have entity with all specified tags
-            if (entityTags != null) {
+            // Check system must have entity with all specified memory keys
+            if (entityMemoryKeys != null) {
                 boolean foundEntity = false;
                 for (SectorEntityToken entity : system.getAllEntities())
-                    if (entity.getTags().containsAll(entityTags)) {
+                    if (matchesAllMemoryKeys(entity)) {
                         foundEntity = true;
                         break;
                     }
@@ -193,8 +209,7 @@ public class StarSystemFilter {
 
                     // Count how many planets match this filter in this system
                     int actualCount = 0;
-                    if (planetFilterResults.containsKey(planetFilterId) && 
-                        planetFilterResults.get(planetFilterId).containsKey(system)) {
+                    if (planetFilterResults.containsKey(planetFilterId) && planetFilterResults.get(planetFilterId).containsKey(system)) {
                         actualCount = planetFilterResults.get(planetFilterId).get(system).size();
                     }
 
@@ -211,8 +226,7 @@ public class StarSystemFilter {
                 boolean hasAtLeastOne = false;
                 for (String planetFilterId : hasPlanetsOneOf) {
                     // Check if this planet filter has results for this system
-                    if (planetFilterResults.containsKey(planetFilterId) && 
-                        planetFilterResults.get(planetFilterId).containsKey(system)) {
+                    if (planetFilterResults.containsKey(planetFilterId) && planetFilterResults.get(planetFilterId).containsKey(system)) {
                         hasAtLeastOne = true;
                         break;
                     }
@@ -224,5 +238,41 @@ public class StarSystemFilter {
         }
 
         return foundSystems;
+    }
+
+    // Many of these are not actually memory keys, but dumping memory in Dev mode already provides most of this info
+    private boolean matchesAllMemoryKeys(SectorEntityToken entity) {
+        for (String memKeyId : entityMemoryKeys.keySet()) {
+            Object memKeyValue = entityMemoryKeys.get(memKeyId);
+            switch (memKeyId) {
+                case "customType":
+                    if (memKeyValue == null || !memKeyValue.equals(entity.getCustomEntityType())) return false;
+                    break;
+                case "fullName": // Need to do getName() null check since getFullName() doesn't do that
+                    if (memKeyValue == null || entity.getName() == null || !memKeyValue.equals(entity.getFullName()))
+                        return false;
+                    break;
+                case "name":
+                    if (memKeyValue == null || !memKeyValue.equals(entity.getName())) return false;
+                    break;
+                case "id":
+                    if (memKeyValue == null || !memKeyValue.equals(entity.getId())) return false;
+                    break;
+                case "wreckVariant": // Sadly, the plugin does not appear to show in Dev mode
+                    if (memKeyValue == null || !(entity.getCustomPlugin() instanceof DerelictShipEntityPlugin plugin) || !memKeyValue.equals(plugin.getData().ship.variantId))
+                        return false;
+                    break;
+                default:
+                    if (memKeyValue == null) { // Not using [id, value] format
+                        if (memKeyId.startsWith(TAG_MEM_KEY)) { // Searching in tags
+                            if (!entity.getTags().contains(memKeyId.substring(TAG_MEM_KEY.length()))) return false;
+                        } else { // Searching in memory
+                            if (!entity.getMemoryWithoutUpdate().contains(memKeyId)) return false;
+                        }
+                    } else if (!memKeyValue.equals(entity.getMemoryWithoutUpdate().get(memKeyId))) return false;
+                    break;
+            }
+        }
+        return true;
     }
 }
