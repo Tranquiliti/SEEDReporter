@@ -26,7 +26,7 @@ public class PlanetFilter {
         // Convert from percentage (0-400) to decimal (0.0-4.0)
         // JSON config uses percentage for readability: 175 means 175% hazard
         // Game uses decimal: 1.75 means 175% hazard
-        maxHazardValue = (float) settings.optDouble("maxHazardValue", Integer.MAX_VALUE) / 100f;
+        maxHazardValue = (float) settings.optDouble("maxHazardValue", -100f) / 100f;
 
         matchesPlanetTypes = SEEDUtils.convertJSONArrayToSet(settings.optJSONArray("matchesPlanetTypes"));
         matchesConditions = SEEDUtils.convertJSONArrayToSet(settings.optJSONArray("matchesConditions"));
@@ -46,9 +46,13 @@ public class PlanetFilter {
             for (PlanetAPI planet : system.getPlanets()) {
                 if (matchesPlanetTypes != null && !matchesPlanetTypes.isEmpty() && !matchesPlanetTypes.contains(planet.getTypeId()))
                     continue;
-                if (planet.getMarket() == null || planet.getMarket().getHazardValue() > maxHazardValue) continue;
+
+                // Putting getMarket() checks inside the conditionals allows searching for stars, which have no markets
+                if (maxHazardValue >= 0f)
+                    if (planet.getMarket() == null || planet.getMarket().getHazardValue() > maxHazardValue) continue;
 
                 if (checkAvoid) {
+                    if (planet.getMarket() == null) continue;
                     boolean hasAvoidCondition = false;
                     for (MarketConditionAPI condition : planet.getMarket().getConditions())
                         if (avoidConditions.contains(condition.getId())) {
@@ -60,6 +64,7 @@ public class PlanetFilter {
                 }
 
                 if (checkMatch) {
+                    if (planet.getMarket() == null) continue;
                     int numMatches = 0;
                     for (MarketConditionAPI condition : planet.getMarket().getConditions())
                         if (matchesConditions.contains(condition.getId())) numMatches++;

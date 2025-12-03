@@ -1,6 +1,6 @@
 {
 	# Specifies order in which star system filters are executed
-	# Any filters in "starSystemFilters" MUST be placed here to appear in the SEED report
+	# Any enabled filters in "starSystemFilters" MUST be placed here to appear in the SEED report
 	# Filters with "nearSystemFiltersRequired" must appear after the filters they reference
 	"starSystemFilterExecutionOrder": [
 		"sentinel",
@@ -24,7 +24,8 @@
 		"sotf_miasStar",
 		"US_uniquePlanetSystems",
 		"SWP_excelsior",
-		"tahlan_halbmond"
+		"tahlan_halbmond",
+		"rat_gravitationalDynamo"
 	],
 
 	# Which star system filter from "starSystemFilters" to use when searching
@@ -133,7 +134,7 @@
 			"isEnabled": true,
 			"hasTags": [
 				"theme_derelict_cryosleeper"
-			],
+			]
 		},
 		"domainMothership": {
 			"filterName": "Domain-era Mothership",
@@ -380,8 +381,8 @@
 				"theme_breakers_resurgent"
 			],
 			"hasEntityWithMemoryKeys": [
-				#["fullName", "Drifting Ship"],
-				["wreckHullId", "swp_excelsior"]
+				["wreckHullId", "swp_excelsior"],
+				#["fullName", "Drifting Ship"]
 			]
 		},
 		"tahlan_halbmond": {
@@ -400,8 +401,21 @@
 				"theme_magellan_leveller",
 				"theme_magellan_leveller_home_nebula"
 			],
+			"hasPlanetsRequired": [
+				"blackHole"
+			],
 			"hasEntityWithMemoryKeys": [
 				["wreckHullId", "tahlan_halbmond"]
+			]
+		},
+		"rat_gravitationalDynamo": {
+			"filterName": "Random Assortment of Things - Gravitational Dynamo",
+			"isEnabled": false,
+			"hasPlanetsRequired": [
+				"blackHole"
+			],
+			"hasEntityWithMemoryKeys": [
+				["customType", "rat_gravitational_dynamo"]
 			]
 		}
 	},
@@ -450,6 +464,24 @@
 				"desert",
 				"desert1",
 				"barren-desert",
+
+				# Stars are also supported for this option
+				# (Stars are technically planets in the code)
+				"star_orange_giant",
+				"star_red_giant",
+				"star_red_supergiant",
+				"star_red_dwarf",
+				"star_orange",
+				"star_yellow",
+				"star_blue_giant",
+				"star_browndwarf",
+				"star_white",
+				"star_blue_supergiant",
+				"black_hole",
+				"star_neutron",
+				"nebula_center_old",
+				"nebula_center_average",
+				"nebula_center_young",
 			],
 
 			# The planet must have these conditions to match
@@ -517,6 +549,10 @@
 				"extreme_tectonic_activity",
 				"extreme_weather",
 			],
+		},
+		"blackHole": {
+			"filterName": "Black hole",
+			"matchesPlanetTypes": ["black_hole"]
 		},
 		"barrenLowHazard": {
 			"filterName": "Barren (<175%)",

@@ -233,7 +233,9 @@ public class SEEDReport {
                     for (PlanetAPI planet : allMatchingPlanets) {
                         Set<String> filterNames = planetToFilterNames.get(planet);
                         String filterNameStr = filterNames != null ? String.join(", ", filterNames) : "";
-                        print.append(String.format("  %.0f%%, %s (%s)\n", planet.getMarket().getHazardValue() * 100f, planet.getName(), filterNameStr));
+                        if (planet.getMarket() != null) // Stars have no markets
+                            print.append(String.format("  %.0f%%, %s (%s)\n", planet.getMarket().getHazardValue() * 100f, planet.getName(), filterNameStr));
+                        else print.append(String.format("  %s (%s)\n", planet.getName(), filterNameStr));
                     }
 
                     // Print optional planets (with + prefix)
@@ -241,7 +243,9 @@ public class SEEDReport {
                         if (!allMatchingPlanets.contains(planet)) {  // Don't duplicate if already shown
                             Set<String> filterNames = planetToFilterNames.get(planet);
                             String filterNameStr = filterNames != null ? String.join(", ", filterNames) : "";
-                            print.append(String.format("  + %.0f%%, %s (%s)\n", planet.getMarket().getHazardValue() * 100f, planet.getName(), filterNameStr));
+                            if (planet.getMarket() != null) // Stars have no markets
+                                print.append(String.format("  + %.0f%%, %s (%s)\n", planet.getMarket().getHazardValue() * 100f, planet.getName(), filterNameStr));
+                            else print.append(String.format("  + %s (%s)\n", planet.getName(), filterNameStr));
                         }
                 }
 

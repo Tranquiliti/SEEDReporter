@@ -8,6 +8,6 @@
 		"patch": 0
 	},
 	"starsectorVersion": "0.98a-RC8",
-	"directDownloadURL": "https://github.com/Tranquiliti/SEEDReporter/releases/download/v1.0.0/SEEDReporter-v1.0.0.zip",
+	"directDownloadURL": "https://github.com/Tranquiliti/SEEDReporter/releases/latest/download/SEEDReporter.zip",
 	"changelogURL": "https://raw.githubusercontent.com/Tranquiliti/SEEDReporter/main/changelog.txt"
 }

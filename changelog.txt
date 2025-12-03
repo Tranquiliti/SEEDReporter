@@ -9,17 +9,18 @@ Version 1.0.0
   - Now also allows searching for entities with specified memory keys, IDs, names, etc.
   - Tags can still be searched by appending "$tag:" to the desired tag (e.g., "$tag:gate" instead of "gate")
 * Fixed "maxHazardValue" option not properly taking the percentage value (fix by brobinett)
+* "planetFilters" now supports searching for star types (e.g., black holes or neutron stars)
 * Added error handling for SEED reports from "runSEEDReportOnGameStart" to avoid potential game crashes
 * Added error handling when generating the defenders for the Tesseract search
 * Star system filters with "saveShorthand" now also display their shorthand in the SEED report
-* Added more star system filters to "seedreporterSettings.json"
+* Added more star system filters to seedreporterSettings.json
   - Also includes filters for finding certain modded content; these are disabled by default
 * Renamed default "hypershunt" filter to "coronalHypershunt"
 * Moved "runSEEDReportOnGameStart" setting to settings.json (from seedreporterSettings.json)
-  - Done to allow this setting to load even when seedreporterSettings.json cannot be loaded due to errors
+  - Done to allow this setting to load, even when seedreporterSettings.json cannot be loaded due to errors
 * Improved the AutoHotkey script
   - The script can now be toggled on/off using the backtick button
-  - Starting the script also opens a GUI window as a reminder
+  - Starting the script also opens a GUI window as an activation reminder
   - Stopping the script now requires closing the GUI window (instead of pressing the Spacebar button)
 
 
