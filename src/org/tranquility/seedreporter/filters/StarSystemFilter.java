@@ -4,17 +4,14 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.PlanetAPI;
 import com.fs.starfarer.api.campaign.SectorEntityToken;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
+import com.fs.starfarer.api.impl.campaign.DerelictShipEntityPlugin;
 import com.fs.starfarer.api.util.Misc;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.lwjgl.util.vector.Vector2f;
 import org.tranquility.seedreporter.SEEDUtils;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class StarSystemFilter {
     public String filterName;
@@ -22,7 +19,7 @@ public class StarSystemFilter {
     public String systemId;
     public Set<String> avoidTags;
     public Set<String> searchTags;
-    public Set<String> entityTags;
+    public Map<String, Object> entityMemoryKeys;
     public float distanceFromCOM;
     public int numStableLocations;
 
@@ -35,6 +32,8 @@ public class StarSystemFilter {
     public Map<String, Float> nearSystemFiltersRequired;  // System filter ID -> max distance in LY
     public Map<String, Float> nearSystemFiltersOptional;  // Nice to have
 
+    private static final String TAG_MEM_KEY = "$tag:";
+
     public StarSystemFilter(JSONObject settings) {
         filterName = settings.optString("filterName", "Star system filter locations");
         saveShorthand = settings.optString("saveShorthand", null);
@@ -42,12 +41,26 @@ public class StarSystemFilter {
 
         avoidTags = SEEDUtils.convertJSONArrayToSet(settings.optJSONArray("avoidTags"));
         searchTags = SEEDUtils.convertJSONArrayToSet(settings.optJSONArray("hasTags"));
-        entityTags = SEEDUtils.convertJSONArrayToSet(settings.optJSONArray("hasEntityWithTags"));
+
+        JSONArray entityMemoryKeysArray = settings.optJSONArray("hasEntityWithMemoryKeys");
+        if (entityMemoryKeysArray != null) {
+            entityMemoryKeys = new HashMap<>();
+            for (int i = 0; i < entityMemoryKeysArray.length(); i++) {
+                JSONArray pairArray = entityMemoryKeysArray.optJSONArray(i);
+                if (pairArray != null && pairArray.length() >= 2) {
+                    String memKeyId = pairArray.optString(0, null);
+                    Object memKeyValue = pairArray.opt(1);
+                    if (memKeyId != null) entityMemoryKeys.put(memKeyId, memKeyValue);
+                } else {
+                    String memKeyId = entityMemoryKeysArray.optString(i, null);
+                    if (memKeyId != null) entityMemoryKeys.put(memKeyId, null);
+                }
+            }
+        }
 
         distanceFromCOM = (float) settings.optDouble("distanceFromCOM", Float.MAX_VALUE);
         numStableLocations = settings.optInt("numStableLocations", 0);
 
-        // Parse hasPlanetsRequired: either "planetId" or ["planetId", count]
         JSONArray requiredArray = settings.optJSONArray("hasPlanetsRequired");
         if (requiredArray != null) {
             hasPlanetsRequired = new HashMap<>();
@@ -57,61 +70,50 @@ public class StarSystemFilter {
                     // ["habitablePlanet", 3] format
                     String planetFilterId = pairArray.optString(0, null);
                     int count = pairArray.optInt(1, 1);
-                    if (planetFilterId != null) {
-                        hasPlanetsRequired.put(planetFilterId, count);
-                    }
+                    if (planetFilterId != null) hasPlanetsRequired.put(planetFilterId, count);
                 } else {
                     // "habitablePlanet" format (count = 1)
                     String planetFilterId = requiredArray.optString(i, null);
-                    if (planetFilterId != null) {
-                        hasPlanetsRequired.put(planetFilterId, 1);
-                    }
+                    if (planetFilterId != null) hasPlanetsRequired.put(planetFilterId, 1);
                 }
             }
         }
 
-        // Parse hasPlanetsOneOf: simple string array
         hasPlanetsOneOf = SEEDUtils.convertJSONArrayToSet(settings.optJSONArray("hasPlanetsOneOf"));
 
-        // Parse hasPlanetsOptional: simple string array
         hasPlanetsOptional = SEEDUtils.convertJSONArrayToSet(settings.optJSONArray("hasPlanetsOptional"));
 
-        // Parse nearSystemFiltersRequired: either ["filterName"] or [["filterName", distance]]
         JSONArray nearRequiredArray = settings.optJSONArray("nearSystemFiltersRequired");
         if (nearRequiredArray != null) {
             nearSystemFiltersRequired = new HashMap<>();
             for (int i = 0; i < nearRequiredArray.length(); i++) {
                 JSONArray pairArray = nearRequiredArray.optJSONArray(i);
-                if (pairArray == null) {
+
+                if (pairArray == null)
                     // Simple string format: ["filterName"] means 0 LY (must be in system)
                     nearSystemFiltersRequired.put(nearRequiredArray.optString(i), 0f);
-                } else {
+                else
                     // Pair format: [["filterName", distance]]
                     nearSystemFiltersRequired.put(pairArray.optString(0), (float) pairArray.optDouble(1));
-                }
             }
         }
 
-        // Parse nearSystemFiltersOptional: either ["filterName"] or [["filterName", distance]]
         JSONArray nearOptionalArray = settings.optJSONArray("nearSystemFiltersOptional");
         if (nearOptionalArray != null) {
             nearSystemFiltersOptional = new HashMap<>();
             for (int i = 0; i < nearOptionalArray.length(); i++) {
                 JSONArray pairArray = nearOptionalArray.optJSONArray(i);
-                if (pairArray == null) {
+                if (pairArray == null)
                     // Simple string format: ["filterName"] means 0 LY (must be in system)
                     nearSystemFiltersOptional.put(nearOptionalArray.optString(i), 0f);
-                } else {
+                else
                     // Pair format: [["filterName", distance]]
                     nearSystemFiltersOptional.put(pairArray.optString(0), (float) pairArray.optDouble(1));
-                }
             }
         }
     }
 
-    public Set<StarSystemAPI> run(Vector2f centerOfMass, 
-                                   Map<String, Map<StarSystemAPI, Set<PlanetAPI>>> planetFilterResults,
-                                   Map<String, Set<StarSystemAPI>> starSystemListMap) {
+    public Set<StarSystemAPI> run(Vector2f centerOfMass, Map<String, Map<StarSystemAPI, Set<PlanetAPI>>> planetFilterResults, Map<String, Set<StarSystemAPI>> starSystemListMap) {
         Set<StarSystemAPI> foundSystems = new HashSet<>();
 
         Iterable<StarSystemAPI> systems;
@@ -124,36 +126,17 @@ public class StarSystemFilter {
         }
 
         for (StarSystemAPI system : systems) {
-            // Check distance from center of mass
             if (Misc.getDistanceLY(system.getLocation(), centerOfMass) > distanceFromCOM) continue;
 
-            // Check system tags to avoid
             if (avoidTags != null && !Collections.disjoint(system.getTags(), avoidTags)) continue;
 
-            // Check system must have all specified tags
             if (searchTags != null && !system.getTags().containsAll(searchTags)) continue;
 
-            // Check system must have entity with all specified tags
-            if (entityTags != null) {
-                boolean foundEntity = false;
-                for (SectorEntityToken entity : system.getAllEntities())
-                    if (entity.getTags().containsAll(entityTags)) {
-                        foundEntity = true;
-                        break;
-                    }
-                if (!foundEntity) continue;
-            }
-
-            // Check number of stable locations
-            if (numStableLocations > 0 && Misc.getNumStableLocations(system) < numStableLocations) continue;
-
-            // Check proximity to required system filters (must be near ALL)
             if (nearSystemFiltersRequired != null && !nearSystemFiltersRequired.isEmpty()) {
                 boolean nearAllRequiredSystems = true;
                 for (String systemFilterId : nearSystemFiltersRequired.keySet()) {
                     float maxDistance = nearSystemFiltersRequired.get(systemFilterId);
 
-                    // Check if this system filter exists and has results
                     if (!starSystemListMap.containsKey(systemFilterId)) {
                         nearAllRequiredSystems = false;
                         break;
@@ -164,16 +147,11 @@ public class StarSystemFilter {
                     boolean nearThisFilter = false;
                     if (maxDistance <= 0f) {
                         // Distance 0 means must be IN one of the filter systems
-                        if (filterResults.contains(system)) {
+                        if (filterResults.contains(system)) nearThisFilter = true;
+                    } else for (StarSystemAPI filterSystem : starSystemListMap.get(systemFilterId)) {
+                        if (Misc.getDistanceLY(filterSystem.getLocation(), system.getLocation()) <= maxDistance) {
                             nearThisFilter = true;
-                        }
-                    } else {
-                        // Check if within maxDistance of ANY system from this filter
-                        for (StarSystemAPI filterSystem : starSystemListMap.get(systemFilterId)) {
-                            if (Misc.getDistanceLY(filterSystem.getLocation(), system.getLocation()) <= maxDistance) {
-                                nearThisFilter = true;
-                                break;
-                            }
+                            break;
                         }
                     }
 
@@ -193,10 +171,8 @@ public class StarSystemFilter {
 
                     // Count how many planets match this filter in this system
                     int actualCount = 0;
-                    if (planetFilterResults.containsKey(planetFilterId) && 
-                        planetFilterResults.get(planetFilterId).containsKey(system)) {
+                    if (planetFilterResults.containsKey(planetFilterId) && planetFilterResults.get(planetFilterId).containsKey(system))
                         actualCount = planetFilterResults.get(planetFilterId).get(system).size();
-                    }
 
                     if (actualCount < requiredCount) {
                         hasAllRequiredPlanets = false;
@@ -211,8 +187,7 @@ public class StarSystemFilter {
                 boolean hasAtLeastOne = false;
                 for (String planetFilterId : hasPlanetsOneOf) {
                     // Check if this planet filter has results for this system
-                    if (planetFilterResults.containsKey(planetFilterId) && 
-                        planetFilterResults.get(planetFilterId).containsKey(system)) {
+                    if (planetFilterResults.containsKey(planetFilterId) && planetFilterResults.get(planetFilterId).containsKey(system)) {
                         hasAtLeastOne = true;
                         break;
                     }
@@ -220,9 +195,57 @@ public class StarSystemFilter {
                 if (!hasAtLeastOne) continue;
             }
 
+            if (numStableLocations > 0 && Misc.getNumStableLocations(system) < numStableLocations) continue;
+
+            if (entityMemoryKeys != null) {
+                boolean foundEntity = false;
+                for (SectorEntityToken entity : system.getAllEntities())
+                    if (matchesAllMemoryKeys(entity)) {
+                        foundEntity = true;
+                        break;
+                    }
+                if (!foundEntity) continue;
+            }
+
             foundSystems.add(system);
         }
 
         return foundSystems;
+    }
+
+    // Many of these are not actually memory keys, but dumping memory in Dev mode already provides most of this info
+    private boolean matchesAllMemoryKeys(SectorEntityToken entity) {
+        for (String memKeyId : entityMemoryKeys.keySet()) {
+            Object memKeyValue = entityMemoryKeys.get(memKeyId);
+            switch (memKeyId) {
+                case "customType":
+                    if (memKeyValue == null || !memKeyValue.equals(entity.getCustomEntityType())) return false;
+                    break;
+                case "fullName": // Need to do getName() null check since getFullName() doesn't do that
+                    if (memKeyValue == null || entity.getName() == null || !memKeyValue.equals(entity.getFullName()))
+                        return false;
+                    break;
+                case "name":
+                    if (memKeyValue == null || !memKeyValue.equals(entity.getName())) return false;
+                    break;
+                case "id":
+                    if (memKeyValue == null || !memKeyValue.equals(entity.getId())) return false;
+                    break;
+                case "wreckHullId": // The plugin does not show in Dev mode
+                    if (memKeyValue == null || !(entity.getCustomPlugin() instanceof DerelictShipEntityPlugin plugin))
+                        return false;
+                    String hullId = (plugin.getData().ship.variantId != null ? Global.getSettings().getVariant(plugin.getData().ship.variantId) : plugin.getData().ship.variant).getHullSpec().getHullId();
+                    if (!memKeyValue.equals(hullId)) return false;
+                    break;
+                default:
+                    if (memKeyValue == null) { // Not using [id, value] format
+                        if (memKeyId.startsWith(TAG_MEM_KEY)) {
+                            if (!entity.getTags().contains(memKeyId.substring(TAG_MEM_KEY.length()))) return false;
+                        } else if (!entity.getMemoryWithoutUpdate().contains(memKeyId)) return false;
+                    } else if (!memKeyValue.equals(entity.getMemoryWithoutUpdate().get(memKeyId))) return false;
+                    break;
+            }
+        }
+        return true;
     }
 }

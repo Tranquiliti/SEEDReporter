@@ -4,9 +4,11 @@ import lunalib.lunaSettings.LunaSettings;
 import lunalib.lunaSettings.LunaSettingsListener;
 import org.tranquility.seedreporter.SEEDReport;
 
+import static org.tranquility.seedreporter.SEEDUtils.SETTING_RUN_ON_GAME_START;
+
 public class SEEDLunaSettingsListener implements LunaSettingsListener {
     @Override
     public void settingsChanged(String s) {
-        SEEDReport.runOnGameStart = Boolean.TRUE.equals(LunaSettings.getBoolean("seedreporter", "runSEEDReportOnGameStart"));
+        SEEDReport.runOnGameStart = Boolean.TRUE.equals(LunaSettings.getBoolean("seedreporter", SETTING_RUN_ON_GAME_START));
     }
 }

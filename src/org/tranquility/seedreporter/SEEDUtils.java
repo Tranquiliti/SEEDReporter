@@ -9,6 +9,7 @@ import java.util.Set;
 
 public final class SEEDUtils {
     public static final boolean LUNALIB_ENABLED = Global.getSettings().getModManager().isModEnabled("lunalib");
+    public static final String SETTING_RUN_ON_GAME_START = "runSEEDReportOnGameStart";
 
     public static Set<String> convertJSONArrayToSet(JSONArray jsonArray) {
         if (jsonArray == null) return null;

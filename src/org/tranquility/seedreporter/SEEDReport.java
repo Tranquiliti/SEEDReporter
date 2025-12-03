@@ -20,7 +20,6 @@ import com.fs.starfarer.api.impl.campaign.rulecmd.salvage.SalvageGenFromSeed;
 import com.fs.starfarer.api.impl.campaign.rulecmd.salvage.special.SleeperPodsSpecial;
 import com.fs.starfarer.api.util.Misc;
 import com.fs.starfarer.campaign.econ.reach.CommodityMarketData;
-import lunalib.lunaSettings.LunaSettings;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -34,9 +33,10 @@ import java.util.*;
 
 import static com.fs.starfarer.api.impl.campaign.procgen.themes.SalvageSpecialAssigner.MAX_EXCEPTIONAL_PODS_OFFICERS;
 import static com.fs.starfarer.api.ui.MapParams.GRID_SIZE_MAP_UNITS;
+import static org.tranquility.seedreporter.SEEDUtils.SETTING_RUN_ON_GAME_START;
 
 public class SEEDReport {
-    public static boolean runOnGameStart;
+    public static boolean runOnGameStart = Global.getSettings().getBoolean(SETTING_RUN_ON_GAME_START);
 
     private final static String REPORT_FILE_NAME = "seedreporter_savedSeeds.json";
     private final static String REPORT_BORDER = "---------------------------------------- %s ----------------------------------------";
@@ -45,28 +45,23 @@ public class SEEDReport {
     private static Map<String, PlanetFilter> planetFilterMap;
     private static ExceptionalOfficerFilter exceptionalFilter;
     private static String tesseractStarSystemFilter;
+    private static boolean loadedSettings;
 
     private Vector2f centerOfMass;
-
-    static {
-        reloadSettings();
-    }
 
     /**
      * Reloads the "seedreporter" field in seedreporterSettings.json
      */
     @SuppressWarnings("unchecked")
     public static void reloadSettings() {
+        loadedSettings = false;
+
         JSONObject modSettings;
         try {
             modSettings = Global.getSettings().getMergedJSON("data/config/seedreporterConfig/seedreporterSettings.json");
         } catch (IOException | JSONException e) {
             throw new RuntimeException(e);
         }
-
-        if (SEEDUtils.LUNALIB_ENABLED)
-            runOnGameStart = Boolean.TRUE.equals(LunaSettings.getBoolean("seedreporter", "runSEEDReportOnGameStart"));
-        else runOnGameStart = modSettings.optBoolean("runSEEDReportOnGameStart", true);
 
         JSONObject starSystemFilterList = modSettings.optJSONObject("starSystemFilters");
         if (starSystemFilterList != null) {
@@ -88,9 +83,8 @@ public class SEEDReport {
                             StarSystemFilter newFilter = new StarSystemFilter(starSystemFilterSetting);
                             starSystemFilterMap.put(filterId, newFilter);
                         }
-                    } else {
+                    } else
                         Global.getLogger(SEEDReport.class).warn("Filter '" + filterId + "' in execution order not found in starSystemFilters");
-                    }
                 }
 
                 // Warn about filters defined but not in execution order
@@ -98,9 +92,8 @@ public class SEEDReport {
                     String filterId = iter.next();
                     if (!starSystemFilterMap.containsKey(filterId)) {
                         JSONObject filterSettings = starSystemFilterList.optJSONObject(filterId);
-                        if (filterSettings != null && filterSettings.optBoolean("isEnabled", true)) {
+                        if (filterSettings != null && filterSettings.optBoolean("isEnabled", true))
                             Global.getLogger(SEEDReport.class).warn("Enabled filter '" + filterId + "' not in execution order - will not run");
-                        }
                     }
                 }
             } else {
@@ -143,16 +136,20 @@ public class SEEDReport {
         // This filter is merely refreshed to avoid creating another object
         if (exceptionalFilter == null) exceptionalFilter = new ExceptionalOfficerFilter();
         exceptionalFilter.refresh(exceptionalTemplateList, exceptionalSearchArray);
+
+        loadedSettings = true;
     }
 
     /**
-     * Runs a SEED report
+     * Runs a SEED report. SEED report settings will be reloaded if they were not already successfully loaded.
      *
      * @return String containing the report output
      */
     public String run() {
+        if (!loadedSettings) reloadSettings();
+
         centerOfMass = CommodityMarketData.computeCenterOfMass(null, null);
-        
+
         // Run all planet filters
         Map<String, Map<StarSystemAPI, Set<PlanetAPI>>> planetFilterResults = new HashMap<>();
         for (String filterId : planetFilterMap.keySet()) {
@@ -162,7 +159,7 @@ public class SEEDReport {
 
         // Run all star system filters (can use planet filter results and other system filter results)
         // Filters are executed in order, so later filters can reference earlier ones via nearSystemFilters
-        Map<String, Set<StarSystemAPI>> starSystemListMap = new HashMap<>();
+        Map<String, Set<StarSystemAPI>> starSystemListMap = new LinkedHashMap<>();
         for (String filterId : starSystemFilterMap.keySet()) {
             StarSystemFilter systemFilter = starSystemFilterMap.get(filterId);
             starSystemListMap.put(filterId, systemFilter.run(centerOfMass, planetFilterResults, starSystemListMap));
@@ -179,65 +176,56 @@ public class SEEDReport {
         StringBuilder filterShorthand = new StringBuilder();
         for (String filterId : starSystemListMap.keySet()) {
             StarSystemFilter systemFilter = starSystemFilterMap.get(filterId);
-            print.append(String.format(SECTION_TITLE_BORDER, systemFilter.filterName));
+            print.append(String.format(SECTION_TITLE_BORDER, systemFilter.saveShorthand != null ? "{%s} ".formatted(systemFilter.saveShorthand) + systemFilter.filterName : systemFilter.filterName));
 
             for (StarSystemAPI system : starSystemListMap.get(filterId)) {
                 print.append(String.format("%s - %s\n", getHyperspaceCoordinates(system), system.getName()));
-                
+
                 // If this filter specifies planet requirements, show which planets matched
-                if ((systemFilter.hasPlanetsRequired != null && !systemFilter.hasPlanetsRequired.isEmpty()) ||
-                    (systemFilter.hasPlanetsOneOf != null && !systemFilter.hasPlanetsOneOf.isEmpty()) ||
-                    (systemFilter.hasPlanetsOptional != null && !systemFilter.hasPlanetsOptional.isEmpty())) {
-                    
+                boolean containsPlanetsRequired = systemFilter.hasPlanetsRequired != null && !systemFilter.hasPlanetsRequired.isEmpty();
+                boolean containsPlanetsOneOf = systemFilter.hasPlanetsOneOf != null && !systemFilter.hasPlanetsOneOf.isEmpty();
+                boolean containsPlanetsOptional = systemFilter.hasPlanetsOptional != null && !systemFilter.hasPlanetsOptional.isEmpty();
+                if (containsPlanetsRequired || containsPlanetsOneOf || containsPlanetsOptional) {
                     Set<PlanetAPI> requiredPlanets = new HashSet<>();
                     Set<PlanetAPI> oneOfPlanets = new HashSet<>();
                     Set<PlanetAPI> optionalPlanets = new HashSet<>();
-                    
+
                     // Map planets to their matching filter names
                     Map<PlanetAPI, Set<String>> planetToFilterNames = new HashMap<>();
-                    
+
                     // Collect required planets and their filter names
-                    if (systemFilter.hasPlanetsRequired != null) {
-                        for (String planetFilterId : systemFilter.hasPlanetsRequired.keySet()) {
-                            if (planetFilterResults.containsKey(planetFilterId) && 
-                                planetFilterResults.get(planetFilterId).containsKey(system)) {
-                                PlanetFilter filter = planetFilterMap.get(planetFilterId);
-                                for (PlanetAPI planet : planetFilterResults.get(planetFilterId).get(system)) {
-                                    requiredPlanets.add(planet);
-                                    planetToFilterNames.computeIfAbsent(planet, k -> new HashSet<>()).add(filter.filterName);
-                                }
+                    if (containsPlanetsRequired) for (String planetFilterId : systemFilter.hasPlanetsRequired.keySet())
+                        if (planetFilterResults.containsKey(planetFilterId) && planetFilterResults.get(planetFilterId).containsKey(system)) {
+                            PlanetFilter filter = planetFilterMap.get(planetFilterId);
+                            for (PlanetAPI planet : planetFilterResults.get(planetFilterId).get(system)) {
+                                requiredPlanets.add(planet);
+                                planetToFilterNames.computeIfAbsent(planet, k -> new HashSet<>()).add(filter.filterName);
                             }
                         }
-                    }
-                    
+
+
                     // Collect oneOf planets and their filter names
-                    if (systemFilter.hasPlanetsOneOf != null) {
-                        for (String planetFilterId : systemFilter.hasPlanetsOneOf) {
-                            if (planetFilterResults.containsKey(planetFilterId) && 
-                                planetFilterResults.get(planetFilterId).containsKey(system)) {
-                                PlanetFilter filter = planetFilterMap.get(planetFilterId);
-                                for (PlanetAPI planet : planetFilterResults.get(planetFilterId).get(system)) {
-                                    oneOfPlanets.add(planet);
-                                    planetToFilterNames.computeIfAbsent(planet, k -> new HashSet<>()).add(filter.filterName);
-                                }
+                    if (containsPlanetsOneOf) for (String planetFilterId : systemFilter.hasPlanetsOneOf)
+                        if (planetFilterResults.containsKey(planetFilterId) && planetFilterResults.get(planetFilterId).containsKey(system)) {
+                            PlanetFilter filter = planetFilterMap.get(planetFilterId);
+                            for (PlanetAPI planet : planetFilterResults.get(planetFilterId).get(system)) {
+                                oneOfPlanets.add(planet);
+                                planetToFilterNames.computeIfAbsent(planet, k -> new HashSet<>()).add(filter.filterName);
                             }
                         }
-                    }
-                    
+
+
                     // Collect optional planets and their filter names
-                    if (systemFilter.hasPlanetsOptional != null) {
-                        for (String planetFilterId : systemFilter.hasPlanetsOptional) {
-                            if (planetFilterResults.containsKey(planetFilterId) && 
-                                planetFilterResults.get(planetFilterId).containsKey(system)) {
-                                PlanetFilter filter = planetFilterMap.get(planetFilterId);
-                                for (PlanetAPI planet : planetFilterResults.get(planetFilterId).get(system)) {
-                                    optionalPlanets.add(planet);
-                                    planetToFilterNames.computeIfAbsent(planet, k -> new HashSet<>()).add(filter.filterName);
-                                }
+                    if (containsPlanetsOptional) for (String planetFilterId : systemFilter.hasPlanetsOptional)
+                        if (planetFilterResults.containsKey(planetFilterId) && planetFilterResults.get(planetFilterId).containsKey(system)) {
+                            PlanetFilter filter = planetFilterMap.get(planetFilterId);
+                            for (PlanetAPI planet : planetFilterResults.get(planetFilterId).get(system)) {
+                                optionalPlanets.add(planet);
+                                planetToFilterNames.computeIfAbsent(planet, k -> new HashSet<>()).add(filter.filterName);
                             }
                         }
-                    }
-                    
+
+
                     // Print required and oneOf planets (no prefix)
                     Set<PlanetAPI> allMatchingPlanets = new HashSet<>();
                     allMatchingPlanets.addAll(requiredPlanets);
@@ -245,27 +233,24 @@ public class SEEDReport {
                     for (PlanetAPI planet : allMatchingPlanets) {
                         Set<String> filterNames = planetToFilterNames.get(planet);
                         String filterNameStr = filterNames != null ? String.join(", ", filterNames) : "";
-                        print.append(String.format("  %.0f%%, %s (%s)\n", 
-                            planet.getMarket().getHazardValue() * 100f, 
-                            planet.getName(),
-                            filterNameStr));
+                        if (planet.getMarket() != null) // Stars have no markets
+                            print.append(String.format("  %.0f%%, %s (%s)\n", planet.getMarket().getHazardValue() * 100f, planet.getName(), filterNameStr));
+                        else print.append(String.format("  %s (%s)\n", planet.getName(), filterNameStr));
                     }
-                    
+
                     // Print optional planets (with + prefix)
-                    for (PlanetAPI planet : optionalPlanets) {
+                    for (PlanetAPI planet : optionalPlanets)
                         if (!allMatchingPlanets.contains(planet)) {  // Don't duplicate if already shown
                             Set<String> filterNames = planetToFilterNames.get(planet);
                             String filterNameStr = filterNames != null ? String.join(", ", filterNames) : "";
-                            print.append(String.format("  + %.0f%%, %s (%s)\n", 
-                                planet.getMarket().getHazardValue() * 100f, 
-                                planet.getName(),
-                                filterNameStr));
+                            if (planet.getMarket() != null) // Stars have no markets
+                                print.append(String.format("  + %.0f%%, %s (%s)\n", planet.getMarket().getHazardValue() * 100f, planet.getName(), filterNameStr));
+                            else print.append(String.format("  + %s (%s)\n", planet.getName(), filterNameStr));
                         }
-                    }
                 }
 
                 // Show required proximity features
-                if (systemFilter.nearSystemFiltersRequired != null && !systemFilter.nearSystemFiltersRequired.isEmpty()) {
+                if (systemFilter.nearSystemFiltersRequired != null && !systemFilter.nearSystemFiltersRequired.isEmpty())
                     for (String systemFilterId : systemFilter.nearSystemFiltersRequired.keySet()) {
                         float maxDistance = systemFilter.nearSystemFiltersRequired.get(systemFilterId);
 
@@ -273,7 +258,7 @@ public class SEEDReport {
                             if (maxDistance <= 0f) {
                                 // System IS in the filter
                                 StarSystemFilter requiredFilter = starSystemFilterMap.get(systemFilterId);
-                                print.append(String.format("  Matches '%s'\n", requiredFilter.filterName));
+                                print.append(String.format("  * Matches '%s'\n", requiredFilter.filterName));
                             } else {
                                 // Find nearest system for display
                                 StarSystemAPI nearestSystem = null;
@@ -287,16 +272,14 @@ public class SEEDReport {
                                 }
                                 if (nearestSystem != null) {
                                     StarSystemFilter requiredFilter = starSystemFilterMap.get(systemFilterId);
-                                    print.append(String.format("  Within %.1f LY of '%s' (%s)\n",
-                                        nearestDistance, requiredFilter.filterName, nearestSystem.getName()));
+                                    print.append(String.format("  * Within %.1f LY of '%s' (%s)\n", nearestDistance, requiredFilter.filterName, nearestSystem.getName()));
                                 }
                             }
                         }
                     }
-                }
 
                 // Show optional proximity features
-                if (systemFilter.nearSystemFiltersOptional != null && !systemFilter.nearSystemFiltersOptional.isEmpty()) {
+                if (systemFilter.nearSystemFiltersOptional != null && !systemFilter.nearSystemFiltersOptional.isEmpty())
                     for (String systemFilterId : systemFilter.nearSystemFiltersOptional.keySet()) {
                         float maxDistance = systemFilter.nearSystemFiltersOptional.get(systemFilterId);
 
@@ -307,50 +290,42 @@ public class SEEDReport {
 
                             if (maxDistance <= 0f) {
                                 // Check if system IS in the filter
-                                if (starSystemListMap.get(systemFilterId).contains(system)) {
+                                if (starSystemListMap.get(systemFilterId).contains(system)) isNear = true;
+                            } else for (StarSystemAPI filterSystem : starSystemListMap.get(systemFilterId)) {
+                                float distance = Misc.getDistanceLY(filterSystem.getLocation(), system.getLocation());
+                                if (distance <= maxDistance && distance < nearestDistance) {
                                     isNear = true;
-                                }
-                            } else {
-                                // Check proximity
-                                for (StarSystemAPI filterSystem : starSystemListMap.get(systemFilterId)) {
-                                    float distance = Misc.getDistanceLY(filterSystem.getLocation(), system.getLocation());
-                                    if (distance <= maxDistance && distance < nearestDistance) {
-                                        isNear = true;
-                                        nearestSystem = filterSystem;
-                                        nearestDistance = distance;
-                                    }
+                                    nearestSystem = filterSystem;
+                                    nearestDistance = distance;
                                 }
                             }
 
                             if (isNear) {
                                 StarSystemFilter optionalFilter = starSystemFilterMap.get(systemFilterId);
-                                if (maxDistance <= 0f) {
+                                if (maxDistance <= 0f)
                                     print.append(String.format("  + Matches '%s'\n", optionalFilter.filterName));
-                                } else {
-                                    print.append(String.format("  + Within %.1f LY of '%s' (%s)\n", 
-                                        nearestDistance, optionalFilter.filterName, nearestSystem.getName()));
-                                }
+                                else
+                                    print.append(String.format("  + Within %.1f LY of '%s' (%s)\n", nearestDistance, optionalFilter.filterName, nearestSystem.getName()));
+
                             }
                         }
                     }
-                }
             }
 
             if (systemFilter.saveShorthand != null && !starSystemListMap.get(filterId).isEmpty()) {
-                if (filterShorthand.length() > 0) filterShorthand.append(",");
+                if (!filterShorthand.isEmpty()) filterShorthand.append(",");
                 filterShorthand.append(systemFilter.saveShorthand);
             }
         }
 
         // Printing exceptional officers
         StringBuilder exceptionalShorthand = new StringBuilder("[");
-        print.append(String.format(SECTION_TITLE_BORDER, "Exceptional officer pod locations"));
+        print.append(String.format(SECTION_TITLE_BORDER, "Exceptional officer pods"));
         if (officersInSalvage.isEmpty()) print.append("No exceptional officer pods found!\n");
         for (SectorEntityToken entity : officersInSalvage) {
-            Object o = entity.getMemoryWithoutUpdate().get(MemFlags.SALVAGE_SPECIAL_DATA);
-            PersonAPI officer = ((SleeperPodsSpecial.SleeperPodsSpecialData) o).officer;
+            PersonAPI officer = ((SleeperPodsSpecial.SleeperPodsSpecialData) entity.getMemoryWithoutUpdate().get(MemFlags.SALVAGE_SPECIAL_DATA)).officer;
 
-            print.append(String.format("%s - %s within %s (%s)\n * ", getHyperspaceCoordinates(entity.getContainingLocation()), officer.getName().getFullName(), entity.getFullName(), entity.getContainingLocation().getName()));
+            print.append(String.format("%s - %s in %s (%s)\n  ", getHyperspaceCoordinates(entity.getContainingLocation()), officer.getName().getFullName(), entity.getFullName(), entity.getContainingLocation().getName()));
 
             for (SkillLevelAPI skill : officer.getStats().getSkillsCopy())
                 if (skill.getSkill().isCombatOfficerSkill()) {
@@ -374,7 +349,7 @@ public class SEEDReport {
         StringBuilder variantShorthand = new StringBuilder();
         boolean sameTesseractVariants = false;
         if (tesseractStarSystemFilter != null) {
-            print.append(String.format(SECTION_TITLE_BORDER, "Tesseract locations"));
+            print.append(String.format(SECTION_TITLE_BORDER, "Tesseract variants"));
             Set<String> variants = new HashSet<>();
             for (StarSystemAPI system : starSystemListMap.get(tesseractStarSystemFilter)) {
                 print.append(String.format("%s - %s\n", getHyperspaceCoordinates(system), system.getName()));
@@ -382,14 +357,20 @@ public class SEEDReport {
                 for (SectorEntityToken entity : system.getAllEntities()) {
                     if (!entity.hasTag(Tags.CORONAL_TAP)) continue;
 
-                    CampaignFleetAPI defenders = generateSalvageDefenders(entity);
-                    if (defenders == null) continue;
+                    CampaignFleetAPI defenders;
+                    try {
+                        defenders = generateSalvageDefenders(entity);
+                    } catch (RuntimeException e) {
+                        print.append("  Error occured while generating defenders for this Coronal Hypershunt; skipping defender printing\n");
+                        continue;
+                    }
+                    if (defenders == null || defenders.getMembersWithFightersCopy() == null) continue;
 
                     for (FleetMemberAPI member : defenders.getMembersWithFightersCopy()) {
                         ShipVariantAPI variant = member.getVariant();
                         String variantId = variant.getHullVariantId();
                         variants.add(variantId);
-                        print.append(String.format(" * %s (%s)\n", variant.getDisplayName(), variantId));
+                        print.append(String.format("  %s (%s)\n", variant.getDisplayName(), variantId));
                         variantShorthand.append(variantId.charAt(variantId.indexOf("_") + 1)).append(variantId.charAt(variantId.length() - 1));
                     }
                 }
@@ -400,9 +381,8 @@ public class SEEDReport {
         print.append(String.format(REPORT_BORDER, Global.getSector().getSeedString()));
 
         if (!filterShorthand.isEmpty() || exceptionalFilterPass || sameTesseractVariants) {
+            String seedString = createSeedString(exceptionalFilterPass, sameTesseractVariants, exceptionalShorthand, variantShorthand, filterShorthand);
             try {
-                String seedString = createSeedString(exceptionalFilterPass, sameTesseractVariants, exceptionalShorthand, variantShorthand, filterShorthand);
-
                 JSONObject json;
                 if (Global.getSettings().fileExistsInCommon(REPORT_FILE_NAME)) {
                     json = Global.getSettings().readJSONFromCommon(REPORT_FILE_NAME, false);
@@ -415,21 +395,21 @@ public class SEEDReport {
                     versionSeeds.put(seedString);
                 }
                 Global.getSettings().writeJSONToCommon(REPORT_FILE_NAME, json, false);
-
-                if (!filterShorthand.isEmpty())
-                    print.append("\nFound a system or planet matching a \"saveShorthand\" filter!");
-
-                if (exceptionalFilterPass)
-                    print.append("\nFound a combination of exceptional officers with the specified requirements!");
-
-                if (sameTesseractVariants)
-                    print.append("\nFound all Tesseract variants to be identical! Defeat them in-battle to verify their weapon drops!");
-
-                print.append(String.format("\nWrote seed to Starsector/saves/common/%s:\n\"%s\"", REPORT_FILE_NAME, seedString));
             } catch (JSONException | IOException e) {
                 print.append("\nFailed to write seed to file!");
                 return print.toString();
             }
+
+            if (!filterShorthand.isEmpty())
+                print.append("\nFound a system or planet matching a \"saveShorthand\" filter!");
+
+            if (exceptionalFilterPass)
+                print.append("\nFound a combination of exceptional officers with the specified requirements!");
+
+            if (sameTesseractVariants)
+                print.append("\nFound all Tesseract variants to be identical! Defeat them in-battle to verify their weapon drops!");
+
+            print.append(String.format("\nWrote seed to Starsector/saves/common/%s:\n\"%s\"", REPORT_FILE_NAME, seedString));
         }
 
         return print.toString();

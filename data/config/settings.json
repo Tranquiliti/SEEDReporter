@@ -1,4 +1,11 @@
+#-- Note for LunaLib users --#
+# LunaLib overrides the "runSeedReportOnGameStart" setting.
+# Use LunaLib's in-game UI configs to toggle it instead.
+
 {
+	# If true, a SEED Report will be executed upon starting a new game
+	"runSEEDReportOnGameStart": true,
+
 	# Vanilla setting that reduces initial save file size from ~8 MB to ~2 MB
 	# Recommended for reducing file size bloat when creating many new games
 	"compressSaveGameData":false  # smaller files, faster saving/loading, saveiles files not hand-editable
