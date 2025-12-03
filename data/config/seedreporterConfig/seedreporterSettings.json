@@ -1,11 +1,4 @@
-#-- Note for LunaLib users --#
-# LunaLib overrides the "runSeedReportOnGameStart" setting.
-# Use LunaLib's in-game UI configs to toggle it instead.
-
 {
-	# If true, a SEED Report will be executed upon starting a new game
-	"runSEEDReportOnGameStart": true,
-
 	# Specifies order in which star system filters are executed
 	# Any filters in "starSystemFilters" MUST be placed here to appear in the SEED report
 	# Filters with "nearSystemFiltersRequired" must appear after the filters they reference
@@ -30,7 +23,8 @@
 		"multiHabitableSystem",
 		"sotf_miasStar",
 		"US_uniquePlanetSystems",
-		"SWP_excelsior"
+		"SWP_excelsior",
+		"tahlan_halbmond"
 	],
 
 	# Which star system filter from "starSystemFilters" to use when searching
@@ -388,6 +382,26 @@
 			"hasEntityWithMemoryKeys": [
 				#["fullName", "Drifting Ship"],
 				["wreckHullId", "swp_excelsior"]
+			]
+		},
+		"tahlan_halbmond": {
+			"filterName": "Tahlan Shipworks - Halbmond wreck",
+			"isEnabled": false,
+			"avoidTags": [
+				"theme_breakers",
+				"theme_breakers_main",
+				"theme_breakers_secondary",
+				"theme_breakers_no_fleets",
+				"theme_breakers_destroyed",
+				"theme_breakers_suppressed",
+				"theme_breakers_resurgent",
+				"theme_magellan_homeworld",
+				"theme_magellan_graveyard",
+				"theme_magellan_leveller",
+				"theme_magellan_leveller_home_nebula"
+			],
+			"hasEntityWithMemoryKeys": [
+				["wreckHullId", "tahlan_halbmond"]
 			]
 		}
 	},

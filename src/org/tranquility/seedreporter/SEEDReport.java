@@ -20,7 +20,6 @@ import com.fs.starfarer.api.impl.campaign.rulecmd.salvage.SalvageGenFromSeed;
 import com.fs.starfarer.api.impl.campaign.rulecmd.salvage.special.SleeperPodsSpecial;
 import com.fs.starfarer.api.util.Misc;
 import com.fs.starfarer.campaign.econ.reach.CommodityMarketData;
-import lunalib.lunaSettings.LunaSettings;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -37,7 +36,7 @@ import static com.fs.starfarer.api.ui.MapParams.GRID_SIZE_MAP_UNITS;
 import static org.tranquility.seedreporter.SEEDUtils.SETTING_RUN_ON_GAME_START;
 
 public class SEEDReport {
-    public static boolean runOnGameStart;
+    public static boolean runOnGameStart = Global.getSettings().getBoolean(SETTING_RUN_ON_GAME_START);
 
     private final static String REPORT_FILE_NAME = "seedreporter_savedSeeds.json";
     private final static String REPORT_BORDER = "---------------------------------------- %s ----------------------------------------";
@@ -46,28 +45,23 @@ public class SEEDReport {
     private static Map<String, PlanetFilter> planetFilterMap;
     private static ExceptionalOfficerFilter exceptionalFilter;
     private static String tesseractStarSystemFilter;
+    private static boolean loadedSettings;
 
     private Vector2f centerOfMass;
-
-    static {
-        reloadSettings();
-    }
 
     /**
      * Reloads the "seedreporter" field in seedreporterSettings.json
      */
     @SuppressWarnings("unchecked")
     public static void reloadSettings() {
+        loadedSettings = false;
+
         JSONObject modSettings;
         try {
             modSettings = Global.getSettings().getMergedJSON("data/config/seedreporterConfig/seedreporterSettings.json");
         } catch (IOException | JSONException e) {
             throw new RuntimeException(e);
         }
-
-        if (SEEDUtils.LUNALIB_ENABLED)
-            runOnGameStart = Boolean.TRUE.equals(LunaSettings.getBoolean("seedreporter", SETTING_RUN_ON_GAME_START));
-        else runOnGameStart = modSettings.optBoolean(SETTING_RUN_ON_GAME_START, true);
 
         JSONObject starSystemFilterList = modSettings.optJSONObject("starSystemFilters");
         if (starSystemFilterList != null) {
@@ -142,14 +136,18 @@ public class SEEDReport {
         // This filter is merely refreshed to avoid creating another object
         if (exceptionalFilter == null) exceptionalFilter = new ExceptionalOfficerFilter();
         exceptionalFilter.refresh(exceptionalTemplateList, exceptionalSearchArray);
+
+        loadedSettings = true;
     }
 
     /**
-     * Runs a SEED report
+     * Runs a SEED report. SEED report settings will be reloaded if they were not already successfully loaded.
      *
      * @return String containing the report output
      */
     public String run() {
+        if (!loadedSettings) reloadSettings();
+
         centerOfMass = CommodityMarketData.computeCenterOfMass(null, null);
 
         // Run all planet filters
