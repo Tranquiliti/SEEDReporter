@@ -1,3 +1,10 @@
+Version 1.0.1
+
+* Optimized "planetFilters" by not loading any unused planet filters
+* Commented out the "compressSaveGameData" setting in settings.json to avoid overriding the vanilla setting by default
+
+
+
 Version 1.0.0
 
 * Revamped SEED Report with multi-planet system search feature (implemented by brobinett)
