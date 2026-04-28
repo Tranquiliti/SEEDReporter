@@ -1,9 +1,9 @@
 # SEED Reporter
-A utility mod that can display information about a sector seed, like the location of Coronal Hypershunts and exceptional officer pods.
+A utility mod for <a href=https://fractalsoftworks.com/>Starsector</a> that can display information about a sector seed, like the location of Coronal Hypershunts and exceptional officer pods.
 
-Also includes tools for seed-hunting, like a new game option that bypasses the time-pass step, automatically saving remarkable seeds into a file, and a AutoHotkey script to constantly create new games.
+Also includes tools for seed-hunting, like a new game option that bypasses the time-pass step, automatically saving remarkable seeds into a file, and an <a href=https://www.autohotkey.com/>AutoHotkey</a> script to constantly create new games.
 
-Requires the Console Commands mod to output the results in-game.
+Requires the <a href=https://github.com/LazyWizard/console-commands>Console Commands</a> mod to output the results in-game.
 
 # Credits
 <b>LazyWizard</b> - For the Console Commands mod!<br>
@@ -13,4 +13,4 @@ Requires the Console Commands mod to output the results in-game.
 <b>Alex and the Fractal Softworks team</b> - For the amazing game that is Starsector!<br>
 
 # Modding notes
-This mod is licensed under <b>CC0 1.0</b>. Feel free to take or use anything here for your own use.
+This mod is licensed under <b>CC0 1.0</b>. Feel free to take or use anything here for your own use, provided this use also follows the Starsector User License.

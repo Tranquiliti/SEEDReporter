@@ -64,7 +64,7 @@ public class SEEDReport {
         }
 
         JSONObject starSystemFilterList = modSettings.optJSONObject("starSystemFilters");
-        Set<String> usedPlanetFilters = new HashSet<>(); // To ensure unused planet filters are not loaded
+        Set<String> usedPlanetFilters = new HashSet<>(); // To ensure only used planet filters are loaded
         if (starSystemFilterList != null) {
             starSystemFilterMap = new LinkedHashMap<>(); // LinkedHashMap to maintain filter order
 
@@ -84,9 +84,11 @@ public class SEEDReport {
                             StarSystemFilter newFilter = new StarSystemFilter(starSystemFilterSetting);
                             starSystemFilterMap.put(filterId, newFilter);
 
-                            usedPlanetFilters.addAll(newFilter.hasPlanetsRequired.keySet());
-                            usedPlanetFilters.addAll(newFilter.hasPlanetsOneOf);
-                            usedPlanetFilters.addAll(newFilter.hasPlanetsOptional);
+                            if (newFilter.hasPlanetsRequired != null)
+                                usedPlanetFilters.addAll(newFilter.hasPlanetsRequired.keySet());
+                            if (newFilter.hasPlanetsOneOf != null) usedPlanetFilters.addAll(newFilter.hasPlanetsOneOf);
+                            if (newFilter.hasPlanetsOptional != null)
+                                usedPlanetFilters.addAll(newFilter.hasPlanetsOptional);
                         }
                     } else
                         Global.getLogger(SEEDReport.class).warn("Filter '%s' in execution order not found in starSystemFilters".formatted(filterId));
@@ -401,7 +403,7 @@ public class SEEDReport {
                 }
                 Global.getSettings().writeJSONToCommon(REPORT_FILE_NAME, json, false);
             } catch (JSONException | IOException e) {
-                print.append("\nFailed to write seed to file!");
+                print.append("\nFailed to write seed to file!\n").append(e);
                 return print.toString();
             }
 
