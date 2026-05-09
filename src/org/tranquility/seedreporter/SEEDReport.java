@@ -29,6 +29,7 @@ import org.tranquility.seedreporter.filters.PlanetFilter;
 import org.tranquility.seedreporter.filters.StarSystemFilter;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.*;
 
 import static com.fs.starfarer.api.impl.campaign.procgen.themes.SalvageSpecialAssigner.MAX_EXCEPTIONAL_PODS_OFFICERS;
@@ -46,8 +47,6 @@ public class SEEDReport {
     private static ExceptionalOfficerFilter exceptionalFilter;
     private static String tesseractStarSystemFilter;
     private static boolean loadedSettings;
-
-    private Vector2f centerOfMass;
 
     /**
      * Reloads the "seedreporter" field in seedreporterSettings.json
@@ -155,7 +154,7 @@ public class SEEDReport {
     public String run() {
         if (!loadedSettings) reloadSettings();
 
-        centerOfMass = CommodityMarketData.computeCenterOfMass(null, null);
+        Vector2f centerOfMass = CommodityMarketData.computeCenterOfMass(null, null);
 
         // Run all planet filters
         Map<String, Map<StarSystemAPI, Set<PlanetAPI>>> planetFilterResults = new HashMap<>();
@@ -186,7 +185,7 @@ public class SEEDReport {
             print.append(SECTION_TITLE_BORDER.formatted(systemFilter.saveShorthand != null ? "{%s} ".formatted(systemFilter.saveShorthand) + systemFilter.filterName : systemFilter.filterName));
 
             for (StarSystemAPI system : starSystemListMap.get(filterId)) {
-                print.append("%s - %s\n".formatted(getHyperspaceCoordinates(system), system.getName()));
+                print.append("%s - %s\n".formatted(getHyperspaceCoordinates(centerOfMass, system), system.getName()));
 
                 // If this filter specifies planet requirements, show which planets matched
                 boolean containsPlanetsRequired = systemFilter.hasPlanetsRequired != null && !systemFilter.hasPlanetsRequired.isEmpty();
@@ -332,7 +331,7 @@ public class SEEDReport {
         for (SectorEntityToken entity : officersInSalvage) {
             PersonAPI officer = ((SleeperPodsSpecial.SleeperPodsSpecialData) entity.getMemoryWithoutUpdate().get(MemFlags.SALVAGE_SPECIAL_DATA)).officer;
 
-            print.append("%s - %s in %s (%s)\n  ".formatted(getHyperspaceCoordinates(entity.getContainingLocation()), officer.getName().getFullName(), entity.getFullName(), entity.getContainingLocation().getName()));
+            print.append("%s - %s in %s (%s)\n  ".formatted(getHyperspaceCoordinates(centerOfMass, entity.getContainingLocation()), officer.getName().getFullName(), entity.getFullName(), entity.getContainingLocation().getName()));
 
             for (SkillLevelAPI skill : officer.getStats().getSkillsCopy())
                 if (skill.getSkill().isCombatOfficerSkill()) {
@@ -359,7 +358,7 @@ public class SEEDReport {
             print.append(SECTION_TITLE_BORDER.formatted("Tesseract variants"));
             Set<String> variants = new HashSet<>();
             for (StarSystemAPI system : starSystemListMap.get(tesseractStarSystemFilter)) {
-                print.append("%s - %s\n".formatted(getHyperspaceCoordinates(system), system.getName()));
+                print.append("%s - %s\n".formatted(getHyperspaceCoordinates(centerOfMass, system), system.getName()));
 
                 for (SectorEntityToken entity : system.getAllEntities()) {
                     if (!entity.hasTag(Tags.CORONAL_TAP)) continue;
@@ -390,17 +389,12 @@ public class SEEDReport {
         if (!filterShorthand.isEmpty() || exceptionalFilterPass || sameTesseractVariants) {
             String seedString = createSeedString(exceptionalFilterPass, sameTesseractVariants, exceptionalShorthand, variantShorthand, filterShorthand);
             try {
-                JSONObject json;
-                if (Global.getSettings().fileExistsInCommon(REPORT_FILE_NAME)) {
-                    json = Global.getSettings().readJSONFromCommon(REPORT_FILE_NAME, false);
-                    JSONArray versionSeeds = json.getJSONArray(Global.getSettings().getGameVersion());
-                    versionSeeds.put(seedString);
-                } else {
-                    json = new JSONObject();
-                    JSONArray versionSeeds = new JSONArray();
-                    json.put(Global.getSettings().getGameVersion(), versionSeeds);
-                    versionSeeds.put(seedString);
-                }
+                JSONObject json = Global.getSettings().fileExistsInCommon(REPORT_FILE_NAME) ? Global.getSettings().readJSONFromCommon(REPORT_FILE_NAME, false) : new JSONObject();
+
+                String versionSeedsKey = Global.getSettings().getGameVersion() + " " + LocalDate.now();
+                if (!json.has(versionSeedsKey)) json.put(versionSeedsKey, new JSONArray());
+                json.getJSONArray(versionSeedsKey).put(seedString);
+
                 Global.getSettings().writeJSONToCommon(REPORT_FILE_NAME, json, false);
             } catch (JSONException | IOException e) {
                 print.append("\nFailed to write seed to file!\n").append(e);
@@ -528,8 +522,8 @@ public class SEEDReport {
         return null;
     }
 
-    private String getHyperspaceCoordinates(LocationAPI loc) {
+    private String getHyperspaceCoordinates(Vector2f center, LocationAPI loc) {
         Vector2f vec = loc.getLocation();
-        return "%.2f LY (%.2f, %.2f)".formatted(Misc.getDistanceLY(centerOfMass, vec), vec.getX() / GRID_SIZE_MAP_UNITS, vec.getY() / GRID_SIZE_MAP_UNITS);
+        return "%.2f LY (%.2f, %.2f)".formatted(Misc.getDistanceLY(center, vec), vec.getX() / GRID_SIZE_MAP_UNITS, vec.getY() / GRID_SIZE_MAP_UNITS);
     }
 }

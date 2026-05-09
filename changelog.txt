@@ -1,8 +1,10 @@
 Version 2.0.0 (Update for Starsector 0.98.5a)
 
+* Seeds saved in the JSON file now also include the current system date in addition to the game version
 * Optimized "planetFilters" by not loading any unused planet filters
 * The exception message is now printed if the SEED report failed to write the seed to file
 * Commented out the "compressSaveGameData" setting in settings.json to avoid overriding the vanilla setting by default
+* The AutoHotkey script loop will now automatically reload (to stop the script) if Starsector was closed during execution
 
 
 
