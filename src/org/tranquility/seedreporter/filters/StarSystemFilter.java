@@ -113,7 +113,7 @@ public class StarSystemFilter {
         }
     }
 
-    public Set<StarSystemAPI> run(Vector2f centerOfMass, Map<String, Map<StarSystemAPI, Set<PlanetAPI>>> planetFilterResults, Map<String, Set<StarSystemAPI>> starSystemListMap) {
+    public Set<StarSystemAPI> run(Vector2f center, Map<String, Map<StarSystemAPI, Set<PlanetAPI>>> planetFilterResults, Map<String, Set<StarSystemAPI>> starSystemListMap) {
         Set<StarSystemAPI> foundSystems = new HashSet<>();
 
         Iterable<StarSystemAPI> systems;
@@ -126,7 +126,7 @@ public class StarSystemFilter {
         }
 
         for (StarSystemAPI system : systems) {
-            if (Misc.getDistanceLY(system.getLocation(), centerOfMass) > distanceFromCOM) continue;
+            if (Misc.getDistanceLY(system.getLocation(), center) > distanceFromCOM) continue;
 
             if (avoidTags != null && !Collections.disjoint(system.getTags(), avoidTags)) continue;
 
