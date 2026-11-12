@@ -420,9 +420,9 @@ public class SEEDReport {
         String seedString = Global.getSector().getSeedString() + ": ";
         if (foundExceptional) seedString += "{!EO}";
         if (foundSameTesseract) seedString += "{!TV}";
-        if (!shorthandPrint.isEmpty()) seedString += "{" + shorthandPrint + "}";
+        if (!shorthandPrint.isEmpty()) seedString += "{%s}".formatted(shorthandPrint);
         if (!exceptionalShorthand.isEmpty()) seedString += " " + exceptionalShorthand;
-        seedString += " (" + variantShorthand + ")";
+        seedString += " (%s)".formatted(variantShorthand);
         return seedString;
     }
 
