@@ -1,3 +1,8 @@
+Version 2.0.0 (Update for Starsector 0.98.5a)
+* Minor code refactors
+
+
+
 Version 1.1.0
 
 * Seeds saved in the JSON file now also include the current system date in addition to the game version
